@@ -5,6 +5,8 @@ from torch.distributions import Categorical
 import torch.nn as nn
 import torch.nn.functional as F
 
+from game import Direction, Game, State
+
 # Define the neural network architecture
 class SimpleNet(nn.Module):
     def __init__(self):
@@ -29,18 +31,19 @@ def sample_action(output):
 # Create an instance of the network
 net = SimpleNet()
 
-# Generate random input data
-input_data = torch.tensor([[
-    0., 0., 0., 0.,
-    0., 0., 0., 0.,
-    0., 0., 0., 0.,
-    0., 0., 1., 1.
-]])
+game = Game()
+print(game)
+while game.state == State.ONGOING:
+    # pass the board state into the network
+    flattened_board = [float(item) for sublist in game.board for item in sublist]
+    input_data = torch.tensor([flattened_board])
+    output = net(input_data)
 
-# Pass the input through the network
-output = net(input_data)
-print(output)
+    # get action to play
+    action = Direction(sample_action(output) + 1)
+    print(action)
+    game.move(action)
 
-action = sample_action(output)
-print(action)
+    for _ in range(100): print()
+    print(game)
 
