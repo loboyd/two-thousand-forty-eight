@@ -80,10 +80,10 @@ class Game:
         unit += [0] * (4 - len(unit)) # pad the 0s on the right
         return unit
 
+    def _tile_repr(self, tile): return f'{(2**tile if tile > 0 and self.exp else tile):>4}'
+
     def __repr__(self):
-        if self.exp:
-            return "\n".join(["  ".join("{:4}".format(2**x if x > 0 else 0) for x in row) for row in self.board])
-        return "\n".join(["  ".join("{:2}".format(x) for x in row) for row in self.board])
+        return "\n".join(["  ".join(self._tile_repr(x) for x in row) for row in self.board])
 
 
 def get_input_char():
