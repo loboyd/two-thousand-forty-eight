@@ -28,6 +28,10 @@ class Game:
         self._place_random()
 
     def move(self, direction):
+        if not self._check_move_possible():
+            self.state = State.OVER
+            return
+
         snapshot = copy.deepcopy(self.board)
         if direction == Direction.RIGHT:
             for r in range(4):
@@ -54,8 +58,24 @@ class Game:
         if self.board != snapshot:
             self._place_random()
 
+    def _check_move_possible(self):
+        """Returns True if there exists at least one possible move"""
+        return self._check_combination_possible() or len(self._find_empties()) > 0
+
+    def _check_combination_possible(self):
+        """Returns True if some combination is possible, i.e., two adjacent equal tiles"""
+        for r, c in [(x, y) for x in range(3) for y in range(3)]:
+            if self.board[r][c] > 0:
+                if self.board[r][c] == self.board[r+1][c] or self.board[r][c] == self.board[r][c+1]:
+                    return True
+        return False
+
+    def _find_empties(self):
+        """Return the index-pairs of all empty board positions"""
+        return [(r, c) for r in range(4) for c in range(4) if self.board[r][c] == 0]
+
     def _place_random(self):
-        empties = [(r, c) for r in range(4) for c in range(4) if self.board[r][c] == 0]
+        empties = self._find_empties()
         if empties == []:
             self.state = State.OVER
             return
