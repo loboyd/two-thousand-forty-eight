@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import copy
 import enum
 import random
 import sys
@@ -28,6 +29,7 @@ class Game:
         self._place_random()
 
     def move(self, direction):
+        snapshot = copy.deepcopy(self.board)
         if direction == Direction.RIGHT:
             for r in range(4):
                 self.board[r] = list(reversed(Game._move_unit(reversed(self.board[r]))))
@@ -50,7 +52,8 @@ class Game:
                 self.board[1][c] = unit[2]
                 self.board[2][c] = unit[1]
                 self.board[3][c] = unit[0]
-        self._place_random()
+        if self.board != snapshot:
+            self._place_random()
 
     def _place_random(self):
         empties = [(r, c) for r in range(4) for c in range(4) if self.board[r][c] == 0]
