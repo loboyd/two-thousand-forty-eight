@@ -21,6 +21,8 @@ class Game:
         self.score = score
         self.board = board
         self.state = state
+        self._place_random()
+        self._place_random()
 
     def move(self, direction):
         if direction == Direction.RIGHT:
