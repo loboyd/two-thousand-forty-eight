@@ -2,6 +2,9 @@
 
 import enum
 import random
+import sys
+import termios
+import tty
 
 class Direction(enum.Enum):
     RIGHT = 1
@@ -76,6 +79,14 @@ class Game:
     def __repr__(self):
         return "\n".join(["  ".join("{:2}".format(x) for x in row) for row in self.board])
 
+
+def get_input_char():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    tty.setraw(fd)
+    input_char = sys.stdin.read(1)
+    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return input_char
 
 game = Game()
 print(game)
