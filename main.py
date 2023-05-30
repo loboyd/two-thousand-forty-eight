@@ -15,7 +15,7 @@ class State(enum.Enum):
 
 class Game:
 
-    EMPTY_BOARD = [[1, 0, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+    EMPTY_BOARD = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
 
     def __init__(self, score=0, board=EMPTY_BOARD, state=State.ONGOING):
         self.score = score
