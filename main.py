@@ -27,7 +27,7 @@ class Game:
     def move(self, direction):
         if direction == Direction.RIGHT:
             for r in range(4):
-                self.board[r] = reversed(Game._move_unit(reversed(self.board[r])))
+                self.board[r] = list(reversed(Game._move_unit(reversed(self.board[r]))))
         if direction == Direction.LEFT:
             for r in range(4):
                 self.board[r] = Game._move_unit(self.board[r])
