@@ -21,10 +21,11 @@ class Game:
 
     EMPTY_BOARD = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
 
-    def __init__(self, score=0, board=EMPTY_BOARD, state=State.ONGOING):
+    def __init__(self, score=0, board=EMPTY_BOARD, state=State.ONGOING, exp=False):
         self.score = score
         self.board = board
         self.state = state
+        self.exp = exp
         self._place_random()
         self._place_random()
 
@@ -80,6 +81,8 @@ class Game:
         return unit
 
     def __repr__(self):
+        if self.exp:
+            return "\n".join(["  ".join("{:4}".format(2**x if x > 0 else 0) for x in row) for row in self.board])
         return "\n".join(["  ".join("{:2}".format(x) for x in row) for row in self.board])
 
 
