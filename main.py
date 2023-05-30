@@ -8,11 +8,18 @@ class Direction(enum.Enum):
     UP = 3
     LEFT = 4
 
+class State(enum.Enum):
+    ONGOING = 1
+    OVER = 2
+
 class Game:
 
     EMPTY_BOARD = [[1, 0, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
 
-    def __init__(self, score=0, board=EMPTY_BOARD): (self.score, self.board) = (score, board)
+    def __init__(self, score=0, board=EMPTY_BOARD, state=State.ONGOING):
+        self.score = score
+        self.board = board
+        self.state = state
 
     def move(self, direction):
         if direction == Direction.RIGHT:
