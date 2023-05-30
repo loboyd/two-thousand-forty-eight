@@ -45,6 +45,7 @@ class Game:
                 self.board[1][c] = unit[2]
                 self.board[2][c] = unit[1]
                 self.board[3][c] = unit[0]
+        self._place_random()
 
     def _place_random(self):
         empties = [(r, c) for r in range(4) for c in range(4) if self.board[r][c] == 0]
