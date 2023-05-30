@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import enum
+import random
 
 class Direction(enum.Enum):
     RIGHT = 1
@@ -44,6 +45,14 @@ class Game:
                 self.board[1][c] = unit[2]
                 self.board[2][c] = unit[1]
                 self.board[3][c] = unit[0]
+
+    def _place_random(self):
+        empties = [(r, c) for r in range(4) for c in range(4) if self.board[r][c] == 0]
+        if empties == []:
+            self.state = State.OVER
+            return
+        r, c = random.choice(empties)
+        self.board[r][c] = 1 if random.random() < 0.9 else 2
 
     @staticmethod
     def move_unit(unit):
