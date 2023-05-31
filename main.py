@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 
+import random
+
 import torch
 from torch.distributions import Categorical
 import torch.nn as nn
 import torch.nn.functional as F
 
 from game import Direction, Game, State
+
+seed = 42
+random.seed(seed)
+torch.manual_seed(seed)
 
 # Define the neural network architecture
 class SimpleNet(nn.Module):
