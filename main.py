@@ -77,6 +77,20 @@ class Replay:
         for r in range(len(self.rewards)):
             self.rewards[r] = final_score - self.rewards[r]
 
+    # note: this makes some of the rewards negative. not sure if that's good
+    def _normalize_rewards(self):
+        mean_reward = sum(self.rewards) / len(self.rewards)
+
+        n = len(self.rewards)
+        mean = sum(self.rewards) / n
+        for r in range(len(self.rewards)):
+            self.rewards[r] -= mean
+
+        variance = sum(x ** 2 for x in self.rewards) / n # mean is 0 because of the above adjustment
+        std_dev = variance ** 0.5
+        for r in range(len(self.rewards)):
+            self.rewards[r] /= std_dev
+
 # Create an instance of the network
 net = SimpleNet()
 replay = Replay(net)
