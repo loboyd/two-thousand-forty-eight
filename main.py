@@ -70,6 +70,12 @@ class Replay:
                 print(game)
                 print(game.score)
 
+        self._adjust_rewards(game.score)
+
+    def _adjust_rewards(self, final_score):
+        # adjust to represent all future reward (todo: maybe discount)
+        for r in range(len(self.rewards)):
+            self.rewards[r] = final_score - self.rewards[r]
 
 # Create an instance of the network
 net = SimpleNet()
