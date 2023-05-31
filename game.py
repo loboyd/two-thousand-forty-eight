@@ -35,26 +35,33 @@ class Game:
         snapshot = copy.deepcopy(self.board)
         if direction == Direction.RIGHT:
             for r in range(4):
-                self.board[r] = list(reversed(Game._move_unit(reversed(self.board[r]))))
-        if direction == Direction.LEFT:
+                new, score_change = Game._move_unit(reversed(self.board[r]))
+                self.board[r] = list(reversed(new))
+                self.score += score_change
+        elif direction == Direction.LEFT:
             for r in range(4):
-                self.board[r] = Game._move_unit(self.board[r])
-        if direction == Direction.UP:
+                new, score_change = Game._move_unit(self.board[r])
+                self.board[r] = new
+                self.score += score_change
+        elif direction == Direction.UP:
             for c in range(4):
                 unit = [self.board[0][c], self.board[1][c], self.board[2][c], self.board[3][c]]
-                unit = Game._move_unit(unit)
-                self.board[0][c] = unit[0]
-                self.board[1][c] = unit[1]
-                self.board[2][c] = unit[2]
-                self.board[3][c] = unit[3]
-        if direction == Direction.DOWN:
+                new, score_change = Game._move_unit(unit)
+                self.board[0][c] = new[0]
+                self.board[1][c] = new[1]
+                self.board[2][c] = new[2]
+                self.board[3][c] = new[3]
+                self.score += score_change
+        elif direction == Direction.DOWN:
             for c in range(4):
                 unit = [self.board[3][c], self.board[2][c], self.board[1][c], self.board[0][c]]
-                unit = Game._move_unit(unit)
-                self.board[0][c] = unit[3]
-                self.board[1][c] = unit[2]
-                self.board[2][c] = unit[1]
-                self.board[3][c] = unit[0]
+                new, score_change = Game._move_unit(unit)
+                self.board[0][c] = new[3]
+                self.board[1][c] = new[2]
+                self.board[2][c] = new[1]
+                self.board[3][c] = new[0]
+                self.score += score_change
+
         if self.board != snapshot:
             self._place_random()
 
@@ -84,13 +91,15 @@ class Game:
 
     @staticmethod
     def _move_unit(unit):
+        score_change = 0
         unit = Game._collapse(unit)
         for i in range(3):
             if unit[i] > 0 and unit[i] == unit[i+1]:
                 unit[i] += 1
+                score_change += 2**unit[i]
                 unit[i+1] = 0
         unit = Game._collapse(unit)
-        return unit
+        return unit, score_change
 
     @staticmethod
     def _collapse(unit):

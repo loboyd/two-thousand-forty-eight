@@ -46,4 +46,5 @@ while game.state == State.ONGOING:
 
     for _ in range(100): print()
     print(game)
+    print(game.score)
 
