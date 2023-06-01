@@ -38,6 +38,7 @@ class Replay:
         self.actions = []
         self.log_probs = []
         self.rewards = []
+        # todo: store `n` number of actions here, computed during `self.play()` instead of `self.grad()`
 
     def play(self, display=False):
         game = Game()
@@ -80,12 +81,12 @@ class Replay:
     def grad(self):
         """Accumulates the gradient computed according to this `Replay`. Returns the number of
            components to the gradient (caller should divide by this number)"""
-        n = len(replay.states)
+        n = len(self.states)
         for i in range(n):
-            state = replay.states[i]
-            action = replay.actions[i]
-            log_prob = replay.log_probs[i]
-            reward = replay.rewards[i]
+            state = self.states[i]
+            action = self.actions[i]
+            log_prob = self.log_probs[i]
+            reward = self.rewards[i]
 
             loss = -log_prob * reward
             loss.backward() # accumulate the gradient (to be normalized later)
