@@ -34,6 +34,7 @@ class Replay:
     def __init__(self, net):
         #self.seed = random.randint(0, 1023)
         self.net = net
+        self.game = Game()
         self.states = [] # as input-ready tensors
         self.actions = []
         self.log_probs = []
@@ -41,11 +42,10 @@ class Replay:
         # todo: store `n` number of actions here, computed during `self.play()` instead of `self.grad()`
 
     def play(self, display=False):
-        game = Game()
-        if display: print(game)
-        while game.state == State.ONGOING:
+        if display: print(self.game)
+        while self.game.state == State.ONGOING:
             # format input and write down state
-            flattened_board = [float(item) for sublist in game.board for item in sublist]
+            flattened_board = [float(item) for sublist in self.game.board for item in sublist]
             input_data = torch.tensor([flattened_board])
             self.states += [input_data]
 
@@ -61,17 +61,17 @@ class Replay:
             action = Direction(sample.item() + 1)
             self.actions += [action]
             if display: print(action)
-            game.move(action)
+            self.game.move(action)
 
             # write down the current score
-            self.rewards += [game.score]
+            self.rewards += [self.game.score]
 
             if display:
                 for _ in range(100): print()
-                print(game)
-                print(game.score)
+                print(self.game)
+                print(self.game.score)
 
-        self._adjust_rewards(game.score)
+        self._adjust_rewards(self.game.score)
 
     def _adjust_rewards(self, final_score):
         # adjust to represent all future reward (todo: maybe discount)
