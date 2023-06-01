@@ -29,19 +29,13 @@ class SimpleNet(nn.Module):
         return out
 
 
-# todo: probably put this in a class or something
-def sample_action(output):
-    distribution = Categorical(output)
-    action = distribution.sample()
-    return action.item()
-
-
 class Replay:
     def __init__(self, net):
         #self.seed = random.randint(0, 1023)
         self.net = net
         self.states = [] # as input-ready tensors
         self.actions = []
+        self.log_probs = []
         self.rewards = []
 
     def play(self, display=False):
@@ -56,8 +50,13 @@ class Replay:
             # pass the board state into the network
             output = net(input_data)
 
-            # sample the output to determine which action to play, write down the action
-            action = Direction(sample_action(output) + 1)
+            # sample the output; compute and write down log_prob
+            distribution = Categorical(output)
+            sample = distribution.sample()
+            self.log_probs += distribution.log_prob(sample)
+
+            # determine the action based on the sample, write it down
+            action = Direction(sample.item() + 1)
             self.actions += [action]
             if display: print(action)
             game.move(action)
@@ -81,9 +80,12 @@ class Replay:
 net = SimpleNet()
 replay = Replay(net)
 replay.play()
-for (state, action, reward) in zip(replay.states, replay.actions, replay.rewards):
+for (state, action, log_prob, reward) in zip(replay.states, replay.actions, replay.log_probs, replay.rewards):
     print(f'state: {state}')
     print(f'action: {action}')
+    print(f'log_prob: {log_prob}')
     print(f'reward: {reward}')
+    print(f'log_prob * reward: {log_prob * reward}')
+    #loss = -
     print()
 
