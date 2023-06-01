@@ -92,41 +92,32 @@ class Replay:
             loss.backward() # accumulate the gradient (to be normalized later)
         return n
 
+
+class Batch:
+    def __init__(self, net, batch_size=100):
+        """Handle a batch of Replays"""
+        self.net = net
+        self.batch_size = batch_size
+        self.replays = []
+        self.total_action_count = 0
+
+    def run(self, show_progress=True):
+        """Run `self.batch_size` different games (`Replay`s), and compute gradients"""
+        for r in range(self.batch_size):
+            if show_progress and r % 10 == 0: print(f'running batch {r}')
+            replay = Replay(net)
+            replay.play()
+            n_actions = replay.grad()
+            self.total_action_count += n_actions
+            self.replays.append(replay)
+        for param in self.net.parameters():
+            param.grad /= self.total_action_count
+
 net = SimpleNet()
 optimizer = optim.Adam(net.parameters(), lr=0.01)
 
-# run a single game trajectory
-replay = Replay(net)
-replay.play()
-n = replay.grad()
-for param in net.parameters():
-    param.grad /= n
-    print(param.grad)
-
-assert(len(replay.states) == len(replay.actions) == len(replay.log_probs) == len(replay.rewards))
-
-"""
-n = len(replay.states)
-for i in range(n):
-    state = replay.states[i]
-    action = replay.actions[i]
-    log_prob = replay.log_probs[i]
-    reward = replay.rewards[i]
-
-    #print(f'state: {state}')
-    #print(f'action: {action}')
-    #print(f'log_prob: {log_prob}')
-    #print(f'reward: {reward}')
-    #print(f'log_prob * reward: {log_prob * reward}')
-    #print()
-
-    loss = -log_prob * reward
-    loss.backward() # accumulate the gradient (to be normalized later)
-
-for param in net.parameters():
-    param.grad /= n
-    print(param.grad)
-"""
+batch = Batch(net)
+batch.run(show_progress=True)
 
 #optimizer.step()
 
