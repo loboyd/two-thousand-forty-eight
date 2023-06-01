@@ -6,6 +6,7 @@ import torch
 from torch.distributions import Categorical
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 
 from game import Direction, Game, State
 
@@ -76,16 +77,35 @@ class Replay:
         for r in range(len(self.rewards)):
             self.rewards[r] = final_score - self.rewards[r]
 
-# Create an instance of the network
 net = SimpleNet()
+optimizer = optim.Adam(net.parameters(), lr=0.01)
+
+# run a single game trajectory
 replay = Replay(net)
 replay.play()
-for (state, action, log_prob, reward) in zip(replay.states, replay.actions, replay.log_probs, replay.rewards):
-    print(f'state: {state}')
-    print(f'action: {action}')
-    print(f'log_prob: {log_prob}')
-    print(f'reward: {reward}')
-    print(f'log_prob * reward: {log_prob * reward}')
-    #loss = -
-    print()
+
+assert(len(replay.states) == len(replay.actions) == len(replay.log_probs) == len(replay.rewards))
+
+n = len(replay.states)
+for i in range(n):
+    state = replay.states[i]
+    action = replay.actions[i]
+    log_prob = replay.log_probs[i]
+    reward = replay.rewards[i]
+
+    #print(f'state: {state}')
+    #print(f'action: {action}')
+    #print(f'log_prob: {log_prob}')
+    #print(f'reward: {reward}')
+    #print(f'log_prob * reward: {log_prob * reward}')
+    #print()
+
+    loss = -log_prob * reward
+    loss.backward() # accumulate the gradient (to be normalized later)
+
+for param in net.parameters():
+    param.grad /= n
+    print(param.grad)
+
+optimizer.step()
 
