@@ -77,15 +77,34 @@ class Replay:
         for r in range(len(self.rewards)):
             self.rewards[r] = final_score - self.rewards[r]
 
+    def grad(self):
+        """Accumulates the gradient computed according to this `Replay`. Returns the number of
+           components to the gradient (caller should divide by this number)"""
+        n = len(replay.states)
+        for i in range(n):
+            state = replay.states[i]
+            action = replay.actions[i]
+            log_prob = replay.log_probs[i]
+            reward = replay.rewards[i]
+
+            loss = -log_prob * reward
+            loss.backward() # accumulate the gradient (to be normalized later)
+        return n
+
 net = SimpleNet()
 optimizer = optim.Adam(net.parameters(), lr=0.01)
 
 # run a single game trajectory
 replay = Replay(net)
 replay.play()
+n = replay.grad()
+for param in net.parameters():
+    param.grad /= n
+    print(param.grad)
 
 assert(len(replay.states) == len(replay.actions) == len(replay.log_probs) == len(replay.rewards))
 
+"""
 n = len(replay.states)
 for i in range(n):
     state = replay.states[i]
@@ -106,6 +125,7 @@ for i in range(n):
 for param in net.parameters():
     param.grad /= n
     print(param.grad)
+"""
 
-optimizer.step()
+#optimizer.step()
 
