@@ -21,7 +21,7 @@ class Game:
 
     def __init__(self, score=0, board=EMPTY_BOARD, state=State.ONGOING, exp=False):
         self.score = score
-        self.board = board
+        self.board = copy.deepcopy(board)
         self.state = state
         self.exp = exp
         self._place_random()
