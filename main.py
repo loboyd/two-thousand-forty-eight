@@ -2,7 +2,6 @@
 
 import pickle
 import random
-import time
 
 import torch
 from torch.distributions import Categorical
@@ -57,7 +56,6 @@ class Replay:
 
     def play(self, display=False):
         if display: print(self.game)
-        t = time.time()
         while self.game.state == State.ONGOING:
             # format input and write down state
             flattened_board = [float(item) for sublist in self.game.board for item in sublist]
@@ -86,7 +84,6 @@ class Replay:
                 print(self.game)
                 print(self.game.score)
 
-        print(f'took {time.time() - t}s to play the game, score: {self.game.score}, reached {self.game.get_max_tile()} tile')
         self._adjust_rewards(self.game.score)
 
     def _adjust_rewards(self, final_score):
