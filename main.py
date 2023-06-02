@@ -94,14 +94,29 @@ class Replay:
 
 
 class Batch:
-    def __init__(self, net, batch_size=100):
+    def __init__(self, net, optimizer=None, batch_size=100):
         """Handle a batch of Replays"""
         self.net = net
+        self.optimizer = optimizer if optimizer is not None else optim.Adam(net.parameters(), lr=0.003)
         self.batch_size = batch_size
         self.replays = []
         self.total_action_count = 0
 
-    def run(self, show_progress=True):
+    def update(self):
+        self.run()
+        scores = [replay.game.score for replay in self.replays]
+        min_score = min(scores)
+        max_score = max(scores)
+        mean_score = sum(scores) / len(scores)
+        print(f'[{min_score:>4}, {mean_score:>8}, {max_score:>4}]')
+        self.optimizer.step()
+
+        # clean up
+        self.net.zero_grad()
+        self.replays.clear()
+        self.total_action_count = 0
+
+    def run(self, show_progress=False):
         """Run `self.batch_size` different games (`Replay`s), and compute gradients"""
         for r in range(self.batch_size):
             if show_progress and r % 10 == 0: print(f'running batch {r}')
