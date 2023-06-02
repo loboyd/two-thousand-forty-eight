@@ -47,7 +47,7 @@ class Replay:
     def __init__(self, net):
         #self.seed = random.randint(0, 1023)
         self.net = net
-        self.game = Game()
+        self.game = Game(exp=False)
         self.states = [] # as input-ready tensors
         self.actions = []
         self.log_probs = []
@@ -145,10 +145,6 @@ class Batch:
 net = SimpleNet()
 
 batch = Batch(net, batch_size=20)
-#batch.run(show_progress=True)
-#for _ in range(1):
-#    batch.update()
-
 while True:
     batch.update()
     save(net)
