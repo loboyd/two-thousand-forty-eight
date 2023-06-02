@@ -27,6 +27,9 @@ class Game:
         self._place_random()
         self._place_random()
 
+    # todo: make this obey `self.exp`
+    def get_max_tile(self): return 2**max([max(row) for row in self.board])
+
     def move(self, direction):
         if not self._check_move_possible():
             self.state = State.OVER
