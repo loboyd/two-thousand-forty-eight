@@ -38,18 +38,18 @@ class Game:
         snapshot = copy.deepcopy(self.board)
         if direction == Direction.RIGHT:
             for r in range(4):
-                new, score_change = Game._move_unit(reversed(self.board[r]))
+                new, score_change = Game._move_unit(reversed(self.board[r]), self.exp)
                 self.board[r] = list(reversed(new))
                 self.score += score_change
         elif direction == Direction.LEFT:
             for r in range(4):
-                new, score_change = Game._move_unit(self.board[r])
+                new, score_change = Game._move_unit(self.board[r], self.exp)
                 self.board[r] = new
                 self.score += score_change
         elif direction == Direction.UP:
             for c in range(4):
                 unit = [self.board[0][c], self.board[1][c], self.board[2][c], self.board[3][c]]
-                new, score_change = Game._move_unit(unit)
+                new, score_change = Game._move_unit(unit, self.exp)
                 self.board[0][c] = new[0]
                 self.board[1][c] = new[1]
                 self.board[2][c] = new[2]
@@ -58,7 +58,7 @@ class Game:
         elif direction == Direction.DOWN:
             for c in range(4):
                 unit = [self.board[3][c], self.board[2][c], self.board[1][c], self.board[0][c]]
-                new, score_change = Game._move_unit(unit)
+                new, score_change = Game._move_unit(unit, self.exp)
                 self.board[0][c] = new[3]
                 self.board[1][c] = new[2]
                 self.board[2][c] = new[1]
@@ -93,13 +93,16 @@ class Game:
         self.board[r][c] = 1 if random.random() < 0.9 else 2
 
     @staticmethod
-    def _move_unit(unit):
+    def _move_unit(unit, exp=False):
         score_change = 0
         unit = Game._collapse(unit)
         for i in range(3):
             if unit[i] > 0 and unit[i] == unit[i+1]:
                 unit[i] += 1
-                score_change += 2**unit[i]
+                if exp:
+                    score_change += 2**unit[i] # todo does this need to be `2**(unit[i]-1)`?
+                else:
+                    score_change += unit[i]
                 unit[i+1] = 0
         unit = Game._collapse(unit)
         return unit, score_change
