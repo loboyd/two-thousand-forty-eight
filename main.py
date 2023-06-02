@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import pickle
 import random
 
 import torch
@@ -10,9 +11,21 @@ import torch.optim as optim
 
 from game import Direction, Game, State
 
-seed = 42
-random.seed(seed)
-torch.manual_seed(seed)
+#seed = 41
+#random.seed(seed)
+#torch.manual_seed(seed)
+
+import pickle
+
+def save(data):
+    with open('data.pickle', 'wb') as file:
+        pickle.dump(data, file)
+
+def load():
+    with open('data.pickle', 'rb') as file:
+        data = pickle.load(file)
+
+    return data
 
 # Define the neural network architecture
 class SimpleNet(nn.Module):
@@ -128,11 +141,17 @@ class Batch:
         for param in self.net.parameters():
             param.grad /= self.total_action_count
 
+#net = load()
 net = SimpleNet()
-optimizer = optim.Adam(net.parameters(), lr=0.01)
 
-batch = Batch(net)
-batch.run(show_progress=True)
+batch = Batch(net, batch_size=20)
+#batch.run(show_progress=True)
+#for _ in range(1):
+#    batch.update()
 
-#optimizer.step()
+while True:
+    batch.update()
+    save(net)
+
+#save(net)
 
