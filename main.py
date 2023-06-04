@@ -60,7 +60,7 @@ class Replay:
             # format input and write down state
             flattened_board = [float(item) for sublist in self.game.board for item in sublist]
             input_data = torch.tensor([flattened_board])
-            self.states += [input_data]
+            self.states.append(input_data)
 
             # pass the board state into the network
             output = net(input_data)
@@ -68,16 +68,16 @@ class Replay:
             # sample the output; compute and write down log_prob
             distribution = Categorical(output)
             sample = distribution.sample()
-            self.log_probs += distribution.log_prob(sample)
+            self.log_probs.append(distribution.log_prob(sample))
 
             # determine the action based on the sample, write it down
             action = Direction(sample.item() + 1)
-            self.actions += [action]
+            self.actions.append(action)
             if display: print(action)
             self.game.move(action)
 
             # write down the current score
-            self.rewards += [self.game.score]
+            self.rewards.append(self.game.score)
 
             if display:
                 for _ in range(100): print()
