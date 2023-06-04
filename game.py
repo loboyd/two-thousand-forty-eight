@@ -119,20 +119,20 @@ class Game:
         return "\n".join(["  ".join(self._tile_repr(x) for x in row) for row in self.board])
 
 
-def get_input_char():
-    fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
-    tty.setraw(fd)
-    input_char = sys.stdin.read(1)
-    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-    return input_char
-
 def play_game():
+    def _get_input_char():
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        tty.setraw(fd)
+        input_char = sys.stdin.read(1)
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return input_char
+
     game = Game(exp=True)
     for _ in range(100): print()
     print(game)
     while game.state == State.ONGOING:
-        move = get_input_char()
+        move = _get_input_char()
         if move == 'j':
             game.move(Direction.LEFT)
         if move == 'k':
