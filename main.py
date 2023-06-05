@@ -31,16 +31,10 @@ def load():
 class SimpleNet(nn.Module):
     def __init__(self):
         super(SimpleNet, self).__init__()
-        self.fc1 = nn.Linear(16, 100)  # Fully connected layer from input to hidden
-        self.relu = nn.ReLU()  # Activation function (ReLU)
-        self.fc2 = nn.Linear(100, 4)  # Fully connected layer from hidden to output
+        self.fc1 = nn.Linear(16, 100)
+        self.fc2 = nn.Linear(100, 4)
 
-    def forward(self, x):
-        out = self.fc1(x)
-        out = self.relu(out)
-        out = self.fc2(out)
-        out = F.softmax(out, dim=1)  # Apply softmax activation to the output
-        return out
+    def forward(self, x): return F.softmax(self.fc2(F.relu(self.fc1(x))), dim=1)
 
 
 class Replay:
