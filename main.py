@@ -18,11 +18,11 @@ torch.manual_seed(seed)
 import pickle
 
 # Define the neural network architecture
-class SimpleNet(nn.Module):
+class Agent(nn.Module):
     def __init__(self):
-        super(SimpleNet, self).__init__()
-        self.fc1 = nn.Linear(16, 100)
-        self.fc2 = nn.Linear(100, 4)
+        super(Agent, self).__init__()
+        self.fc1 = nn.Linear(16, 512)
+        self.fc2 = nn.Linear(512, 4)
 
     def forward(self, x): return F.softmax(self.fc2(F.relu(self.fc1(x))), dim=1)
 
@@ -89,9 +89,8 @@ class Episode:
 
         return ct
 
-
 # set up net and optimizer
-net = SimpleNet()
+net = Agent()
 optimizer = torch.optim.Adam(net.parameters())
 
 #for epoch in range(20): # number of epochs
@@ -112,6 +111,6 @@ while True:
 
     optimizer.step()
 
-    save(net)
+    net.save()
     print(f'epoch {epoch}: [{min(scores)}, {sum(scores) / len(scores)}, {max(scores)}]')
 
