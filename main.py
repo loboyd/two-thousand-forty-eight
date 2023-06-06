@@ -2,6 +2,7 @@
 
 import pickle
 import random
+import time
 
 import torch
 from torch.distributions import Categorical
@@ -96,6 +97,7 @@ optimizer = torch.optim.Adam(net.parameters())
 #for epoch in range(20): # number of epochs
 epoch = 0
 while True:
+    t = time.time()
     epoch += 1
     optimizer.zero_grad()
 
@@ -112,5 +114,5 @@ while True:
     optimizer.step()
 
     net.save()
-    print(f'epoch {epoch}: [{min(scores)}, {sum(scores) / len(scores)}, {max(scores)}]')
+    print(f'epoch {epoch}: [{min(scores)}, {sum(scores) / len(scores)}, {max(scores)}], {time.time() - t}s')
 
