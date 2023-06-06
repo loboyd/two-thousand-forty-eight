@@ -29,7 +29,8 @@ while True:
     scores = []
     for _ in range(2000): # number of episodes per epoch
         episode = Episode(net)
-        ct += episode.run()
+        episode.run()
+        ct += episode.update()
         scores.append(episode.score)
 
     for param in net.parameters():

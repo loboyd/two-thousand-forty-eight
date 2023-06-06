@@ -53,6 +53,8 @@ class Episode:
         self.log_probs = []
         self.rewards = []
         self.score = 0
+        self.ct = 0
+        self.loss = None
 
     def run(self):
         game = Game(exp=True)
@@ -90,13 +92,13 @@ class Episode:
 
         # compute total episode loss
         losses = [-log_prob * R for (log_prob, R) in zip(self.log_probs, self.rewards)]
-        loss = torch.cat(losses).sum()
+        self.loss = torch.cat(losses).sum()
 
-        # compute and accumulate gradient
-        loss.backward()
-
-        # write down final score
+        # write down final score and move count
         self.score = game.score
+        self.ct = ct
 
-        return ct
+    def update(self):
+        self.loss.backward()
+        return self.ct # return move count so the update can be batched
 
