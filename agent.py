@@ -14,17 +14,21 @@ def set_seed(seed): torch.manual_seed(seed)
 class Agent(nn.Module):
     def __init__(self):
         super(Agent, self).__init__()
-        self.fc1 = nn.Linear(16, 512)
+        self.fc1 = nn.Linear(20, 512)
         self.fc2 = nn.Linear(512, 4)
 
-    def forward(self, x): return F.softmax(self.fc2(F.relu(self.fc1(x))), dim=1)
+    def forward(self, x, mask):
+        x = torch.cat((x, mask), dim=1)
+        out = self.fc2(F.relu(self.fc1(x)))
+        return F.softmax(out * mask, dim=1)
 
-    def play_move(self, board):
+    def play_move(self, board, mask):
         # prepare input from board
         input_data = torch.tensor([[float(tile) for row in board for tile in row]])
+        mask = torch.tensor([[float(x) for x in game.get_available_moves()]])
 
-        # run input through net generate policy distribution
-        distribution = Categorical(self.forward(input_data))
+        # run input through net to generate policy distribution
+        distribution = Categorical(self.forward(input_data, mask))
 
         # sample the distribution
         sample = distribution.sample()
@@ -56,9 +60,10 @@ class Episode:
         while game.state == State.ONGOING:
             # prepare input from board
             input_data = torch.tensor([[float(tile) for row in game.board for tile in row]])
+            mask = torch.tensor([[float(x) for x in game.get_available_moves()]])
 
             # run input through net generate policy distribution
-            distribution = Categorical(self.net(input_data))
+            distribution = Categorical(self.net(input_data, mask))
 
             # sample the distribution
             sample = distribution.sample()
