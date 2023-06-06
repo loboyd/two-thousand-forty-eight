@@ -70,14 +70,21 @@ class Game:
 
     def get_available_moves(self):
         moves = set()
-        for r, c in [(x, y) for x in range(3) for y in range(3)]:
+        for r, c in [(x, y) for x in range(4) for y in range(3)]:
             if self.board[r][c] == self.board[r][c+1] != 0: moves.update([Direction.LEFT, Direction.RIGHT])
-            if self.board[r][c] == self.board[r+1][c] != 0: moves.update([Direction.UP, Direction.DOWN])
             if self.board[r][c] == 0 and self.board[r][c+1] > 0: moves.add(Direction.LEFT)
-            if self.board[r][c] == 0 and self.board[r+1][c] > 0: moves.add(Direction.UP)
             if self.board[r][c] > 0 and self.board[r][c+1] == 0: moves.add(Direction.RIGHT)
+        for r, c in [(x, y) for x in range(3) for y in range(4)]:
+            if self.board[r][c] == self.board[r+1][c] != 0: moves.update([Direction.UP, Direction.DOWN])
+            if self.board[r][c] == 0 and self.board[r+1][c] > 0: moves.add(Direction.UP)
             if self.board[r][c] > 0 and self.board[r+1][c] == 0: moves.add(Direction.DOWN)
-        return sorted(moves, key=lambda x: x.value)
+
+        return [
+            Direction.RIGHT in moves,
+            Direction.DOWN in moves,
+            Direction.UP in moves,
+            Direction.LEFT in moves
+        ]
 
     def _check_move_possible(self):
         """Returns True if there exists at least one possible move"""
