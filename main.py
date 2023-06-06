@@ -11,9 +11,9 @@ import torch.optim as optim
 
 from game import Direction, Game, State
 
-#seed = 41
-#random.seed(seed)
-#torch.manual_seed(seed)
+seed = 42
+random.seed(seed)
+torch.manual_seed(seed)
 
 import pickle
 
@@ -37,111 +37,82 @@ class SimpleNet(nn.Module):
     def forward(self, x): return F.softmax(self.fc2(F.relu(self.fc1(x))), dim=1)
 
 
-class Replay:
-    def __init__(self, net):
-        #self.seed = random.randint(0, 1023)
+class Episode:
+    def __init__(self, net, gamma=1):
         self.net = net
-        self.game = Game(exp=False)
-        self.states = [] # as input-ready tensors
-        self.actions = []
+        self.gamma = gamma
         self.log_probs = []
         self.rewards = []
-        # todo: store `n` number of actions here, computed during `self.play()` instead of `self.grad()`
+        self.score = 0
 
-    def play(self, display=False):
-        if display: print(self.game)
-        while self.game.state == State.ONGOING:
-            # format input and write down state
-            flattened_board = [float(item) for sublist in self.game.board for item in sublist]
-            input_data = torch.tensor([flattened_board])
-            self.states.append(input_data)
+    def run(self):
+        game = Game(exp=True)
+        ct = 0 # number of actions taken
+        while game.state == State.ONGOING:
+            # prepare input from board
+            input_data = torch.tensor([[float(tile) for row in game.board for tile in row]])
 
-            # pass the board state into the network
-            output = net(input_data)
+            # run input through net generate policy distribution
+            distribution = Categorical(self.net(input_data))
 
-            # sample the output; compute and write down log_prob
-            distribution = Categorical(output)
+            # sample the distribution
             sample = distribution.sample()
+
+            # write down the logprob
             self.log_probs.append(distribution.log_prob(sample))
 
-            # determine the action based on the sample, write it down
-            action = Direction(sample.item() + 1)
-            self.actions.append(action)
-            if display: print(action)
-            self.game.move(action)
+            # convert action to direction/move
+            direction = Direction(sample.item() + 1)
 
-            # write down the current score
-            self.rewards.append(self.game.score)
+            # execute move
+            score = game.score
+            game.move(direction)
+            ct += 1
 
-            if display:
-                for _ in range(100): print()
-                print(self.game)
-                print(self.game.score)
+            # write down the reward (change in score)
+            self.rewards.append(game.score - score)
 
-        self._adjust_rewards(self.game.score)
+        # adjust rewards to represent future discounted return
+        R = 0
+        for i in range(len(self.rewards)-1, -1, -1):
+            R = self.rewards[i] + self.gamma * R
+            self.rewards[i] = R
 
-    def _adjust_rewards(self, final_score):
-        # adjust to represent all future reward (todo: maybe discount)
-        for r in range(len(self.rewards)):
-            self.rewards[r] = final_score - self.rewards[r]
+        # compute total episode loss
+        losses = [-log_prob * R for (log_prob, R) in zip(self.log_probs, self.rewards)]
+        loss = torch.cat(losses).sum()
 
-    def grad(self):
-        """Accumulates the gradient computed according to this `Replay`. Returns the number of
-           components to the gradient (caller should divide by this number)"""
-        n = len(self.states)
-        for i in range(n):
-            state = self.states[i]
-            action = self.actions[i]
-            log_prob = self.log_probs[i]
-            reward = self.rewards[i]
+        # compute and accumulate gradient
+        loss.backward()
 
-            loss = -log_prob * reward
-            loss.backward() # accumulate the gradient (to be normalized later)
-        return n
+        # write down final score
+        self.score = game.score
+
+        return ct
 
 
-class Batch:
-    def __init__(self, net, optimizer=None, batch_size=100):
-        """Handle a batch of Replays"""
-        self.net = net
-        self.optimizer = optimizer if optimizer is not None else optim.Adam(net.parameters(), lr=0.003)
-        self.batch_size = batch_size
-        self.replays = []
-        self.total_action_count = 0
-
-    def update(self):
-        self.run()
-        scores = [replay.game.score for replay in self.replays]
-        min_score = min(scores)
-        max_score = max(scores)
-        mean_score = sum(scores) / len(scores)
-        print(f'[{min_score:>4}, {mean_score:>8}, {max_score:>4}]')
-        self.optimizer.step()
-
-        # clean up
-        self.net.zero_grad()
-        self.replays.clear()
-        self.total_action_count = 0
-
-    def run(self, show_progress=False):
-        """Run `self.batch_size` different games (`Replay`s), and compute gradients"""
-        for r in range(self.batch_size):
-            if show_progress and r % 10 == 0: print(f'running batch {r}')
-            replay = Replay(net)
-            replay.play()
-            n_actions = replay.grad()
-            self.total_action_count += n_actions
-            self.replays.append(replay)
-        for param in self.net.parameters():
-            param.grad /= self.total_action_count
-
-#net = load()
+# set up net and optimizer
 net = SimpleNet()
+optimizer = torch.optim.Adam(net.parameters())
 
-batch = Batch(net, batch_size=20)
+#for epoch in range(20): # number of epochs
+epoch = 0
 while True:
-    batch.update()
-    save(net)
+    epoch += 1
+    optimizer.zero_grad()
 
-#save(net)
+    ct = 0
+    scores = []
+    for _ in range(200): # number of episodes per epoch
+        episode = Episode(net)
+        ct += episode.run()
+        scores.append(episode.score)
+
+    for param in net.parameters():
+        param.grad /= ct
+
+    optimizer.step()
+
+    save(net)
+    print(f'epoch {epoch}: [{min(scores)}, {sum(scores) / len(scores)}, {max(scores)}]')
 
