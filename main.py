@@ -24,7 +24,7 @@ while True:
 
     ct = 0
     scores = []
-    for _ in range(200): # number of episodes per epoch
+    for _ in range(2000): # number of episodes per epoch
         episode = Episode(net)
         ct += episode.run()
         scores.append(episode.score)
