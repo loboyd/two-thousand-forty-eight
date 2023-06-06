@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+LOAD = True
+SAVE = True
+
 import random
 import time
 
@@ -12,7 +15,7 @@ random.seed(seed)
 set_seed(seed)
 
 # set up net and optimizer
-net = Agent.load()
+net = Agent.load() if LOAD else Agent()
 optimizer = torch.optim.Adam(net.parameters(), lr=0.0003)
 
 #for epoch in range(20): # number of epochs
@@ -34,6 +37,6 @@ while True:
 
     optimizer.step()
 
-    net.save()
-    print(f'epoch {epoch}: [{min(scores):5.2f}, {(sum(scores) / len(scores)):5.2f}, {max(scores):5.2f}], {time.time() - t}s')
+    if SAVE: net.save()
+    print(f'epoch {epoch}: [{min(scores):7.2f}, {(sum(scores) / len(scores)):7.2f}, {max(scores):7.2f}], {(time.time() - t):4.2f}s')
 
