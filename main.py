@@ -17,16 +17,6 @@ torch.manual_seed(seed)
 
 import pickle
 
-def save(data):
-    with open('data.pickle', 'wb') as file:
-        pickle.dump(data, file)
-
-def load():
-    with open('data.pickle', 'rb') as file:
-        data = pickle.load(file)
-
-    return data
-
 # Define the neural network architecture
 class SimpleNet(nn.Module):
     def __init__(self):
@@ -35,6 +25,15 @@ class SimpleNet(nn.Module):
         self.fc2 = nn.Linear(100, 4)
 
     def forward(self, x): return F.softmax(self.fc2(F.relu(self.fc1(x))), dim=1)
+
+    def save(self):
+        with open('data.pickle', 'wb') as file:
+            pickle.dump(self, file)
+
+    @classmethod
+    def load(cls):
+        with open('data.pickle', 'rb') as file:
+            return pickle.load(file)
 
 
 class Episode:
