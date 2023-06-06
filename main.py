@@ -92,7 +92,7 @@ class Episode:
 
 # set up net and optimizer
 net = Agent()
-optimizer = torch.optim.Adam(net.parameters())
+optimizer = torch.optim.Adam(net.parameters(), lr=0.0003)
 
 #for epoch in range(20): # number of epochs
 epoch = 0
