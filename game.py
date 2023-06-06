@@ -68,6 +68,17 @@ class Game:
         if self.board != snapshot:
             self._place_random()
 
+    def get_available_moves(self):
+        moves = set()
+        for r, c in [(x, y) for x in range(3) for y in range(3)]:
+            if self.board[r][c] == self.board[r][c+1] != 0: moves.update([Direction.LEFT, Direction.RIGHT])
+            if self.board[r][c] == self.board[r+1][c] != 0: moves.update([Direction.UP, Direction.DOWN])
+            if self.board[r][c] == 0 and self.board[r][c+1] > 0: moves.add(Direction.LEFT)
+            if self.board[r][c] == 0 and self.board[r+1][c] > 0: moves.add(Direction.UP)
+            if self.board[r][c] > 0 and self.board[r][c+1] == 0: moves.add(Direction.RIGHT)
+            if self.board[r][c] > 0 and self.board[r+1][c] == 0: moves.add(Direction.DOWN)
+        return sorted(moves, key=lambda x: x.value)
+
     def _check_move_possible(self):
         """Returns True if there exists at least one possible move"""
         return self._check_combination_possible() or len(self._find_empties()) > 0
@@ -145,4 +156,5 @@ def play_game():
             exit()
         for _ in range(100): print()
         print(game)
+        print(game.get_available_moves())
 
