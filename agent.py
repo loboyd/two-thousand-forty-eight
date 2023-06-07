@@ -17,17 +17,15 @@ class Agent(nn.Module):
         self.fc1 = nn.Linear(20, 512)
         self.fc2 = nn.Linear(512, 4)
 
-    # todo: there is an extra input dimension that flows all the way to the output. get rid of it.
     def forward(self, x, mask):
-        x = torch.cat((x, mask), dim=2)
+        x = torch.cat((x, mask), dim=1)
         out = self.fc2(F.relu(self.fc1(x)))
-        out = F.softmax(out * mask, dim=1)
-        return out.squeeze(1)
+        return F.softmax(out * mask, dim=0)
 
     def play_move(self, game):
         # prepare input from board
-        input_data = torch.tensor([[float(tile) for row in game.board for tile in row]]).unsqueeze(0)
-        mask = torch.tensor([[float(x) for x in game.get_available_moves()]]).unsqueeze(0)
+        input_data = torch.tensor([float(tile) for row in game.board for tile in row]).unsqueeze(0)
+        mask = torch.tensor([float(x) for x in game.get_available_moves()]).unsqueeze(0)
 
         # run input through net to generate policy distribution
         distribution = Categorical(self.forward(input_data, mask))
@@ -62,10 +60,13 @@ class Episode:
         ct = 0 # number of actions taken
         while game.state == State.ONGOING:
             # prepare input from board
-            # todo: could probably handle the squeeze stuff better
-            input_data = torch.tensor([[float(tile) for row in game.board for tile in row]]).unsqueeze(0)
-            mask = torch.tensor([[float(x) for x in game.get_available_moves()]]).unsqueeze(0)
-            self.states.append((input_data.squeeze(0), mask.squeeze(0)))
+            input_data = torch.tensor([float(tile) for row in game.board for tile in row])
+            mask = torch.tensor([float(x) for x in game.get_available_moves()])
+            self.states.append((input_data, mask))
+
+            # add a dimension for batching
+            input_data = input_data.unsqueeze(0)
+            mask = mask.unsqueeze(0)
 
             # run input through net generate policy distribution
             distribution = Categorical(self.net(input_data, mask))
