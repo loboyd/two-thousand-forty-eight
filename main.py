@@ -2,6 +2,7 @@
 
 LOAD = True
 SAVE = True
+BATCH_SIZE=2000
 
 import random
 import time
@@ -18,26 +19,48 @@ set_seed(seed)
 net = Agent.load() if LOAD else Agent()
 optimizer = torch.optim.Adam(net.parameters(), lr=0.0003)
 
-#for epoch in range(20): # number of epochs
-epoch = 0
+# run `BATCH_SIZE` episodes real quick
 while True:
     t = time.time()
-    epoch += 1
+
+    # todo: now this can be parallelized
+    episodes = [Episode(net) for _ in range(BATCH_SIZE)]
+    for ep in episodes: ep.run()
+
+    ## this is the BATCH training update logic #####################################################
+
+    # make biiiiig lists
+    states = [state[0] for ep in episodes for state in ep.states]
+    masks = [state[1] for ep in episodes for state in ep.states]
+    actions = [action for ep in episodes for action in ep.actions]
+    rewards = [float(reward) for ep in episodes for reward in ep.rewards]
+    scores = [ep.score for ep in episodes]
+
+    # pack shit into tensors
+    states = torch.stack(states)
+    masks = torch.stack(masks)
+    actions = torch.tensor(actions)
+    rewards = torch.tensor(rewards)
+
+    # normalize rewards (sigh... i guess)
+    rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5)
+
+    action_probs = net.forward(states, masks)
+    action_log_probs = torch.log(action_probs.gather(1, actions.unsqueeze(-1)).squeeze())
+    loss = (-action_log_probs * rewards).sum()
+
+    # perform backpropagation
     optimizer.zero_grad()
-
-    ct = 0
-    scores = []
-    for _ in range(2000): # number of episodes per epoch
-        episode = Episode(net)
-        episode.run()
-        ct += episode.update()
-        scores.append(episode.score)
-
-    for param in net.parameters():
-        param.grad /= ct
-
+    loss.backward()
     optimizer.step()
 
+    ################################################################################################
+
     if SAVE: net.save()
-    print(f'epoch {epoch}: [{min(scores):7.2f}, {(sum(scores) / len(scores)):7.2f}, {max(scores):7.2f}], {(time.time() - t):4.2f}s')
+
+    dt = time.time() - t
+    min_score = min(scores)
+    avg_score = sum(scores) / len(scores)
+    max_score = max(scores)
+    print(f'[{min_score:7.2f}, {avg_score:7.2f}, {max_score:7.2f}], {dt:4.2f}s')
 

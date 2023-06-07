@@ -17,15 +17,17 @@ class Agent(nn.Module):
         self.fc1 = nn.Linear(20, 512)
         self.fc2 = nn.Linear(512, 4)
 
+    # todo: there is an extra input dimension that flows all the way to the output. get rid of it.
     def forward(self, x, mask):
-        x = torch.cat((x, mask), dim=1)
+        x = torch.cat((x, mask), dim=2)
         out = self.fc2(F.relu(self.fc1(x)))
-        return F.softmax(out * mask, dim=1)
+        out = F.softmax(out * mask, dim=1)
+        return out.squeeze(1)
 
-    def play_move(self, board, mask):
+    def play_move(self, game):
         # prepare input from board
-        input_data = torch.tensor([[float(tile) for row in board for tile in row]])
-        mask = torch.tensor([[float(x) for x in game.get_available_moves()]])
+        input_data = torch.tensor([[float(tile) for row in game.board for tile in row]]).unsqueeze(0)
+        mask = torch.tensor([[float(x) for x in game.get_available_moves()]]).unsqueeze(0)
 
         # run input through net to generate policy distribution
         distribution = Categorical(self.forward(input_data, mask))
@@ -33,8 +35,8 @@ class Agent(nn.Module):
         # sample the distribution
         sample = distribution.sample()
 
-        # convert action to direction/move
-        return Direction(sample.item() + 1)
+        # convert action to direction/move and execute
+        game.move(Direction(sample.item() + 1))
 
     def save(self):
         with open('data.pickle', 'wb') as file:
@@ -50,19 +52,20 @@ class Episode:
     def __init__(self, net, gamma=1):
         self.net = net
         self.gamma = gamma
-        self.log_probs = []
+        self.states = []
+        self.actions = []
         self.rewards = []
         self.score = 0
-        self.ct = 0
-        self.loss = None
 
     def run(self):
         game = Game(exp=True)
         ct = 0 # number of actions taken
         while game.state == State.ONGOING:
             # prepare input from board
-            input_data = torch.tensor([[float(tile) for row in game.board for tile in row]])
-            mask = torch.tensor([[float(x) for x in game.get_available_moves()]])
+            # todo: could probably handle the squeeze stuff better
+            input_data = torch.tensor([[float(tile) for row in game.board for tile in row]]).unsqueeze(0)
+            mask = torch.tensor([[float(x) for x in game.get_available_moves()]]).unsqueeze(0)
+            self.states.append((input_data.squeeze(0), mask.squeeze(0)))
 
             # run input through net generate policy distribution
             distribution = Categorical(self.net(input_data, mask))
@@ -70,35 +73,25 @@ class Episode:
             # sample the distribution
             sample = distribution.sample()
 
-            # write down the logprob
-            self.log_probs.append(distribution.log_prob(sample))
-
             # convert action to direction/move
-            direction = Direction(sample.item() + 1)
+            sample_item = sample.item()
+            direction = Direction(sample_item + 1)
 
             # execute move
             score = game.score
             game.move(direction)
-            ct += 1
+            self.actions.append(sample_item)
 
             # write down the reward (change in score)
             self.rewards.append(game.score - score)
 
-        # adjust rewards to represent future discounted return
+        self._adjust_rewards()
+
+        self.score = game.score
+
+    def _adjust_rewards(self):
         R = 0
         for i in range(len(self.rewards)-1, -1, -1):
             R = self.rewards[i] + self.gamma * R
             self.rewards[i] = R
-
-        # compute total episode loss
-        losses = [-log_prob * R for (log_prob, R) in zip(self.log_probs, self.rewards)]
-        self.loss = torch.cat(losses).sum()
-
-        # write down final score and move count
-        self.score = game.score
-        self.ct = ct
-
-    def update(self):
-        self.loss.backward()
-        return self.ct # return move count so the update can be batched
 
