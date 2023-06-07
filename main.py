@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-LOAD = True
-SAVE = True
+LOAD = False
+SAVE = False
 BATCH_SIZE=2000
 
 import random
