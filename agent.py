@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from game import Direction, Game, State
+from emulator import Direction, Game
 
 def set_seed(seed): torch.manual_seed(seed)
 
@@ -56,9 +56,12 @@ class Episode:
         self.score = 0
 
     def run(self):
-        game = Game(exp=True)
+        game = Game()
         ct = 0 # number of actions taken
-        while game.state == State.ONGOING:
+        while True:
+            if game.get_available_moves() == [False]*4:
+                break
+
             # prepare input from board
             input_data = torch.tensor([float(tile) for row in game.board for tile in row])
             mask = torch.tensor([float(x) for x in game.get_available_moves()])
