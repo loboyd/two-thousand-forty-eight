@@ -11,3 +11,13 @@ a 2048 emulator, hopefully with very little code
   * normalize rewards: subtract by mean and divide be standard deviation
   * compute gradient expected reward wrt log output (?)
 
+# Notes
+* During game play, the network is run with a single state at a time, but during training, a whole
+  batch is run at once. Does this effect the log prob calculation?
+* It's not clear how to make it faster.
+  * inference: This actually seems to be pretty fast now. It takes ~1s to run the network 2000
+    times.
+  * game emulator: This seems to also not be a huge bottleneck since I replaced the Python version
+    with a much faster Rust version and it's not any faster.
+  * updating: This takes very little time compared with actually running the episode batches.
+
