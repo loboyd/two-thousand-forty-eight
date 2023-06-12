@@ -25,7 +25,7 @@ def update(net, optimizer, episodes):
     masks = [state[1] for ep in episodes for state in ep.states]
     actions = [action for ep in episodes for action in ep.actions]
     rewards = [float(reward) for ep in episodes for reward in ep.rewards]
-    scores = [ep.score for ep in episodes]
+    scores = [ep.score for ep in episodes] # used only for progress printing
 
     # pack shit into tensors
     states = torch.stack(states)
