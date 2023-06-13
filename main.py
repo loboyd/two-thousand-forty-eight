@@ -51,9 +51,9 @@ def update(net, optimizer, episodes):
 
     dt = time.time() - t
     min_score = min(scores)
-    avg_score = sum(scores) / len(scores)
+    med_score = scores[len(scores)//2]
     max_score = max(scores)
-    print(f'[{min_score:7.2f}, {avg_score:7.2f}, {max_score:7.2f}], {dt:4.2f}s')
+    print(f'[{min_score:7.2f}, {med_score:7.2f}, {max_score:7.2f}], {dt:4.2f}s')
 
 
 # set up net and optimizer
