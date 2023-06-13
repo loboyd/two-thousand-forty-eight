@@ -31,10 +31,6 @@ class Game:
     def get_max_tile(self): return 2**max([max(row) for row in self.board])
 
     def move(self, direction):
-        if not self._check_move_possible():
-            self.state = State.OVER
-            return
-
         snapshot = copy.deepcopy(self.board)
         if direction == Direction.RIGHT:
             for r in range(4):
@@ -85,18 +81,6 @@ class Game:
             Direction.UP in moves,
             Direction.LEFT in moves
         ]
-
-    def _check_move_possible(self):
-        """Returns True if there exists at least one possible move"""
-        return self._check_combination_possible() or len(self._find_empties()) > 0
-
-    def _check_combination_possible(self):
-        """Returns True if some combination is possible, i.e., two adjacent equal tiles"""
-        for r, c in [(x, y) for x in range(3) for y in range(3)]:
-            if self.board[r][c] > 0:
-                if self.board[r][c] == self.board[r+1][c] or self.board[r][c] == self.board[r][c+1]:
-                    return True
-        return False
 
     def _find_empties(self):
         """Return the index-pairs of all empty board positions"""

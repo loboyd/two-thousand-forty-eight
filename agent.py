@@ -58,10 +58,14 @@ class Episode:
     def run(self):
         game = Game(exp=True)
         ct = 0 # number of actions taken
-        while game.state == State.ONGOING:
+        while True:
+            available_moves = game.get_available_moves()
+            if available_moves == [False, False, False, False]:
+                break
+
             # prepare input from board
             input_data = torch.tensor([float(tile) for row in game.board for tile in row])
-            mask = torch.tensor([float(x) for x in game.get_available_moves()])
+            mask = torch.tensor([float(x) for x in available_moves])
             self.states.append((input_data, mask))
 
             # add a dimension for batching
