@@ -15,8 +15,9 @@ seed = 42
 random.seed(seed)
 set_seed(seed)
 
-def update(net, optimizer, episodes):
-    t = time.time()
+def update(net, optimizer, episodes, start_time=None):
+    if not start_time:
+        start_time = time.time()
 
     ## this is the BATCH training update logic #####################################################
 
@@ -49,10 +50,10 @@ def update(net, optimizer, episodes):
 
     if SAVE: net.save()
 
-    dt = time.time() - t
     min_score = min(scores)
     med_score = scores[len(scores)//2]
     max_score = max(scores)
+    dt = time.time() - start_time
     print(f'[{min_score:7.2f}, {med_score:7.2f}, {max_score:7.2f}], {dt:4.2f}s')
 
 
@@ -61,8 +62,10 @@ net = Agent.load() if LOAD else Agent()
 optimizer = torch.optim.Adam(net.parameters(), lr=0.0003)
 
 while True:
+    start_time = time.time()
+
     # todo: now this can be parallelized
     episodes = [Episode(net) for _ in range(BATCH_SIZE)]
     for ep in episodes: ep.run()
-    update(net, optimizer, episodes)
+    update(net, optimizer, episodes, start_time)
 
