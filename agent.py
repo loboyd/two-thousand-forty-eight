@@ -22,8 +22,12 @@ class Agent(nn.Module):
 
     def forward(self, x, mask):
         x = torch.cat((x, mask), dim=1)
-        out = self.fc2(F.relu(self.fc1(x)))
-        return F.softmax(out * mask, dim=1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        x[mask == 0] = float('-inf')
+        x = F.softmax(x, dim=1)
+        return x
 
     def play_move(self, game):
         # prepare input from board
