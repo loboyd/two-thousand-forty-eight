@@ -14,8 +14,11 @@ def set_seed(seed): torch.manual_seed(seed)
 class Agent(nn.Module):
     def __init__(self):
         super(Agent, self).__init__()
-        self.fc1 = nn.Linear(20, 512)
-        self.fc2 = nn.Linear(512, 4)
+        self.fc1 = nn.Linear(20, 512, bias=False)
+        self.fc2 = nn.Linear(512, 4, bias=False)
+
+        nn.init.kaiming_uniform_(self.fc1.weight, mode='fan_in', nonlinearity='relu')
+        nn.init.uniform_(self.fc1.weight, a=-0.01, b=0.01)
 
     def forward(self, x, mask):
         x = torch.cat((x, mask), dim=1)
