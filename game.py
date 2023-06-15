@@ -11,18 +11,13 @@ class Direction(enum.Enum):
     UP = 3
     LEFT = 4
 
-class State(enum.Enum):
-    ONGOING = 1
-    OVER = 2
-
 class Game:
 
     EMPTY_BOARD = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
 
-    def __init__(self, score=0, board=EMPTY_BOARD, state=State.ONGOING, exp=False):
+    def __init__(self, score=0, board=EMPTY_BOARD, exp=False):
         self.score = score
         self.board = copy.deepcopy(board)
-        self.state = state
         self.exp = exp
         self._place_random()
         self._place_random()
@@ -88,11 +83,9 @@ class Game:
 
     def _place_random(self):
         empties = self._find_empties()
-        if empties == []:
-            self.state = State.OVER
-            return
-        r, c = random.choice(empties)
-        self.board[r][c] = 1 if random.random() < 0.9 else 2
+        if empties != []:
+            r, c = random.choice(empties)
+            self.board[r][c] = 1 if random.random() < 0.9 else 2
 
     @staticmethod
     def _move_unit(unit, exp=False):
@@ -133,7 +126,7 @@ def play_game():
     game = Game(exp=True)
     for _ in range(100): print()
     print(game)
-    while game.state == State.ONGOING:
+    while True:
         move = _get_input_char()
         if move == 'j':
             game.move(Direction.LEFT)
