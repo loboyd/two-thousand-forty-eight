@@ -54,7 +54,16 @@ def update(net, optimizer, episodes, start_time=None):
     med_score = scores[len(scores)//2]
     max_score = max(scores)
     dt = time.time() - start_time
+
+    # todo: remove this
+    grad_norm = 0
+    for param in net.parameters():
+        grad_norm += (param.grad ** 2).sum().item()
+    grad_norm = grad_norm ** 0.5
+    print(f'grad norm: {grad_norm}')
+
     print(f'[{min_score:7.2f}, {med_score:7.2f}, {max_score:7.2f}], {dt:4.2f}s')
+    print()
 
 
 # set up net and optimizer
