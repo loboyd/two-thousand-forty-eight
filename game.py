@@ -59,7 +59,7 @@ class Game:
         if self.board != snapshot:
             self._place_random()
 
-    def get_available_moves(self):
+    def get_move_mask(self):
         moves = set()
         for r, c in [(x, y) for x in range(4) for y in range(3)]:
             if self.board[r][c] == self.board[r][c+1] != 0: moves.update([Direction.LEFT, Direction.RIGHT])
@@ -140,5 +140,5 @@ def play_game():
             exit()
         for _ in range(100): print()
         print(game)
-        print(game.get_available_moves())
+        print(game.get_move_mask())
 

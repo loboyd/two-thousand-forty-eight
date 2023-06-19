@@ -31,7 +31,7 @@ class Agent(nn.Module):
 
     def get_move(self, game, train=False):
         # prepare input from board
-        move_mask = game.get_available_moves()
+        move_mask = game.get_move_mask()
         if move_mask == [False] * 4:
             return None
 
@@ -75,13 +75,13 @@ class Episode:
         game = Game(exp=True)
         ct = 0 # number of actions taken
         while True:
-            available_moves = game.get_available_moves()
-            if available_moves == [False, False, False, False]:
+            mask = game.get_move_mask()
+            if mask == [False, False, False, False]:
                 break
 
             # prepare input from board
             input_data = torch.tensor([float(tile) for row in game.board for tile in row])
-            mask = torch.tensor([float(x) for x in available_moves])
+            mask = torch.tensor([float(x) for x in mask])
             self.states.append((input_data, mask))
 
             # add a dimension for batching
