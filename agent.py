@@ -29,19 +29,26 @@ class Agent(nn.Module):
         x = F.softmax(x, dim=1)
         return x
 
-    def play_move(self, game):
+    def get_move(self, game, train=False):
         # prepare input from board
+        move_mask = game.get_available_moves()
+        if move_mask == [False] * 4:
+            return None
+
         input_data = torch.tensor([float(tile) for row in game.board for tile in row]).unsqueeze(0)
-        mask = torch.tensor([float(x) for x in game.get_available_moves()]).unsqueeze(0)
+        mask = torch.tensor([float(x) for x in move_mask]).unsqueeze(0)
 
-        # run input through net to generate policy distribution
-        distribution = Categorical(self.forward(input_data, mask))
+        # run the network
+        output = self.forward(input_data, mask)
 
-        # sample the distribution
-        sample = distribution.sample()
+        # if training, sample policy distribution, otherwise, be greedy
+        if train:
+            move_index = Categorical(output).sample().item()
+        else:
+            move_index = torch.argmax(output, dim=1).item()
 
-        # convert action to direction/move and execute
-        game.move(Direction(sample.item() + 1))
+        # convert action to direction/move
+        return Direction(move_index + 1)
 
     def save(self):
         with open('data.pickle', 'wb') as file:
@@ -62,6 +69,8 @@ class Episode:
         self.rewards = []
         self.score = 0
 
+    # todo: possibly refactor this to take advantage of the `Agent.get_move()` method (since right
+    #       now that code is largely a duplication of this code.
     def run(self):
         game = Game(exp=True)
         ct = 0 # number of actions taken
