@@ -94,10 +94,7 @@ class Game:
         for i in range(3):
             if unit[i] > 0 and unit[i] == unit[i+1]:
                 unit[i] += 1
-                if exp:
-                    score_change += 2**unit[i] # todo does this need to be `2**(unit[i]-1)`?
-                else:
-                    score_change += unit[i]
+                score_change += 2**unit[i] # todo does this need to be `2**(unit[i]-1)`?
                 unit[i+1] = 0
         unit = Game._collapse(unit)
         return unit, score_change
