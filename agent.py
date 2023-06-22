@@ -29,6 +29,16 @@ class Agent(nn.Module):
         x = F.softmax(x, dim=1)
         return x
 
+    def play_move(self, game, train=False):
+        """Execute a move according to the policy. If `train == false`, play greedily. Returns
+           boolean describing whether or not a move was successful, i.e, if there were any moves
+           available."""
+        move = self.get_move(game, train=train)
+        if move is None:
+            return False
+        game.move(move)
+        return True
+
     def get_move(self, game, train=False):
         # prepare input from board
         move_mask = game.get_move_mask()
