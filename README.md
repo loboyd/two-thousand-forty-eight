@@ -21,3 +21,10 @@ a 2048 emulator, hopefully with very little code
     with a much faster Rust version and it's not any faster.
   * updating: This takes very little time compared with actually running the episode batches.
 
+# AlphaGo
+* policy network trained with supervised learning on expert games
+* policy network trained via self-play reinforcement learning
+* fast policy network trained on hand-coded features (linear approximation)
+* value network trained on self-play games by the self-play policy network
+* tree-search limiting depth via the learned value function and breadth via learned policy
+
