@@ -19,8 +19,9 @@ class Game:
         self.score = score
         self.board = copy.deepcopy(board)
         self.exp = exp
-        self._place_random()
-        self._place_random()
+        if self.board == Game.EMPTY_BOARD:
+            self._place_random()
+            self._place_random()
 
     # todo: make this obey `self.exp`
     def get_max_tile(self): return 2**max([max(row) for row in self.board])
