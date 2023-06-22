@@ -6,9 +6,9 @@ import termios
 import tty
 
 class Direction(enum.Enum):
-    RIGHT = 1
-    DOWN = 2
-    UP = 3
+    UP = 1
+    RIGHT = 2
+    DOWN = 3
     LEFT = 4
 
 class Game:
@@ -72,9 +72,9 @@ class Game:
             if self.board[r][c] > 0 and self.board[r+1][c] == 0: moves.add(Direction.DOWN)
 
         return [
+            Direction.UP in moves,
             Direction.RIGHT in moves,
             Direction.DOWN in moves,
-            Direction.UP in moves,
             Direction.LEFT in moves
         ]
 
