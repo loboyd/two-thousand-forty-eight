@@ -15,10 +15,13 @@ def set_seed(seed): torch.manual_seed(seed)
 class Agent(nn.Module):
     def __init__(self):
         super(Agent, self).__init__()
-        self.fc1 = nn.Linear(16, 512, bias=False)
+        self.N_CONV_FILTERS = 4
+        self.conv = nn.Conv2d(1, self.N_CONV_FILTERS, kernel_size=2, bias=False)
+        self.fc1 = nn.Linear(self.N_CONV_FILTERS*3*3, 512, bias=False)
         self.fc2 = nn.Linear(512, 32, bias=False)
         self.fc3 = nn.Linear(32, 4, bias=False)
 
+        nn.init.xavier_uniform_(self.conv.weight)
         nn.init.kaiming_uniform_(self.fc1.weight, mode='fan_in', nonlinearity='relu')
         nn.init.kaiming_uniform_(self.fc2.weight, mode='fan_in', nonlinearity='relu')
         nn.init.uniform_(self.fc3.weight, a=-0.01, b=0.01)
@@ -46,7 +49,12 @@ class Agent(nn.Module):
         # stack symmetries along the new dimension
         x = torch.cat((x, x_r, x_rr, x_rrr, xf, x_rf, x_rrf, x_rrrf), dim=0)
 
+        _, n, _ = x.shape
+        x = x.view(8*n, 1, 4, 4)
+
         # the actual math
+        x = self.conv(x)
+        x = x.view(8, n, self.N_CONV_FILTERS*3*3) # flatten
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
