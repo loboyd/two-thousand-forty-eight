@@ -15,7 +15,7 @@ def set_seed(seed): torch.manual_seed(seed)
 class Agent(nn.Module):
     def __init__(self):
         super(Agent, self).__init__()
-        self.fc1 = nn.Linear(20, 512, bias=False)
+        self.fc1 = nn.Linear(16, 512, bias=False)
         self.fc2 = nn.Linear(512, 4, bias=False)
 
         nn.init.kaiming_uniform_(self.fc1.weight, mode='fan_in', nonlinearity='relu')
@@ -31,15 +31,6 @@ class Agent(nn.Module):
         x_rrf  = x[:, fb(rb(rb()))]
         x_rrrf = x[:, fb(rb(rb(rb())))]
 
-        # generate mask symmetries
-        mask_r    = mask[:, ra()]
-        mask_rr   = mask[:, ra(ra())]
-        mask_rrr  = mask[:, ra(ra(ra()))]
-        mask_f    = mask[:, fa()]
-        mask_rf   = mask[:, fa(ra())]
-        mask_rrf  = mask[:, fa(ra(ra()))]
-        mask_rrrf = mask[:, fa(ra(ra(ra())))]
-
         # add dimension for symmetries; notes: dims are now 0 = symmetries, 1 = batch, 2 = data
         x      = torch.unsqueeze(x,      dim=0)
         x_r    = torch.unsqueeze(x_r,    dim=0)
@@ -50,27 +41,13 @@ class Agent(nn.Module):
         x_rrf  = torch.unsqueeze(x_rrf,  dim=0)
         x_rrrf = torch.unsqueeze(x_rrrf, dim=0)
 
-        mask      = torch.unsqueeze(mask,      dim=0)
-        mask_r    = torch.unsqueeze(mask_r,    dim=0)
-        mask_rr   = torch.unsqueeze(mask_rr,   dim=0)
-        mask_rrr  = torch.unsqueeze(mask_rrr,  dim=0)
-        maskf     = torch.unsqueeze(mask_f,    dim=0)
-        mask_rf   = torch.unsqueeze(mask_rf,   dim=0)
-        mask_rrf  = torch.unsqueeze(mask_rrf,  dim=0)
-        mask_rrrf = torch.unsqueeze(mask_rrrf, dim=0)
-
         # stack symmetries along the new dimension
         x = torch.cat((x, x_r, x_rr, x_rrr, xf, x_rf, x_rrf, x_rrrf), dim=0)
-        mask = torch.cat((mask, mask_r, mask_rr, mask_rrr, maskf, mask_rf, mask_rrf, mask_rrrf), dim=0)
 
         # the actual math
-        x = torch.cat((x, mask), dim=2)
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
-
-        # enforce mask
-        x[mask == 0] = float('-inf')
 
         # untransform the action distributions; todo: do this better (in `helpers.py`)
         x[1, :, :] = x[1, :, ra(ra(ra()))] # 3*r = -1*r
@@ -84,6 +61,9 @@ class Agent(nn.Module):
 
         # sum along over symmetries ahead of softmax (should this be done after? then you have to normalize)
         x = torch.sum(x, dim=0) # note: symmetry dimension collapses; back to 0 = batch, 1 = data
+
+        # enforce mask
+        x[mask == 0] = float('-inf')
 
         x = F.softmax(x, dim=1)
         return x
