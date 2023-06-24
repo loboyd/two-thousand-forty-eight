@@ -14,7 +14,7 @@ class RandomBot:
     def __init__(self): pass
 
     def get_move(self, game):
-        move_mask = game.get_available_moves()
+        move_mask = game.get_move_mask()
         available_moves = [k for k, v in enumerate(move_mask) if v]
         if available_moves == []:
             return None
