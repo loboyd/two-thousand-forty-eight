@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 DISPLAY = False
-SCALE = 5
+SCALE = 8
 
 import random
 
@@ -49,8 +49,8 @@ if __name__ == '__main__':
     rando_scores = gameplay_hist(rando)
     learned_scores = gameplay_hist(learned)
 
-    plt.hist(rando_scores, alpha=0.5, label='random', bins=SCALE)
-    plt.hist(learned_scores, alpha=0.5, label='learned policy', bins=SCALE)
+    plt.hist(rando_scores, alpha=0.5, label='random', bins=SCALE, density=True)
+    plt.hist(learned_scores, alpha=0.5, label='learned policy', bins=SCALE, density=True)
     plt.legend()
     plt.title(f'Scores (out of {2**SCALE} games)')
     plt.show()
