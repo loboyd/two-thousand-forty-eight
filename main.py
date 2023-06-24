@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 LOAD = False
-SAVE = False
-BATCH_SIZE=64
+SAVE = True
+BATCH_SIZE=512
 
 import random
 import time
