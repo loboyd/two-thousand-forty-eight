@@ -8,6 +8,37 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
 }
 
 #[pyclass]
+pub struct Batch {
+    games: [Game; 512],
+    move_masks: [u8; 512],
+}
+
+#[pymethods]
+impl Batch {
+    #[new]
+    pub fn new() -> Self {
+        Self {
+            games: [Game::new(); 512],
+            move_masks: [13; 512],
+        }
+    }
+
+    pub fn r#move(moves: Vec<bool>) {
+        //let mut moves = Vec::new();
+        //for _ in 0..64 {
+        //    moves.push(match m0 && 0x11 {
+        //        0 => Direction.Up,
+        //        1 => Direction.Right,
+        //        2 => Direction.Down,
+        //        3 => Direction.Left,
+        //    })
+        //    m0 >>= 2;
+        //}
+    }
+}
+
+#[derive(Clone, Copy)]
+#[pyclass]
 pub struct Game {
     // note: 2^17 is technically possible to achieve, but cmon now...
     #[pyo3(get)]
@@ -15,6 +46,8 @@ pub struct Game {
     #[pyo3(get)]
     pub score: u64,
 }
+
+// note: take 8 u128s and the just process them as 2-bit pairs each describing one of 512 moves
 
 #[pymethods]
 impl Game {
@@ -64,7 +97,7 @@ impl Game {
         self.place_random_tile();
     }
 
-    pub fn get_available_moves(&self) -> [bool; 4] {
+    pub fn get_move_mask(&self) -> [bool; 4] {
         let mut moves = [false; 4]; // right, down, up, left
         for i in 0..4 {
             for j in 0..3 {

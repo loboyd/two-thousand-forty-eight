@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-from game import Direction, Game
+from emulator import Direction, Game
 from helpers import rb, fb, ra, fa
 
 def set_seed(seed): torch.manual_seed(seed)
