@@ -19,7 +19,7 @@ class Agent(nn.Module):
         self.fc2 = nn.Linear(512, 4, bias=False)
 
         nn.init.kaiming_uniform_(self.fc1.weight, mode='fan_in', nonlinearity='relu')
-        nn.init.uniform_(self.fc1.weight, a=-0.01, b=0.01)
+        nn.init.uniform_(self.fc2.weight, a=-0.01, b=0.01)
 
     def forward(self, x, mask):
         # generate board symmetries
