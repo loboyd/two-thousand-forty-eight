@@ -121,6 +121,7 @@ class Episode:
         self.actions = []
         self.rewards = []
         self.score = 0
+        self.move_count = 0
 
     # todo: possibly refactor this to take advantage of the `Agent.get_move()` method (since right
     #       now that code is largely a duplication of this code.
@@ -157,7 +158,9 @@ class Episode:
             self.actions.append(sample_item)
 
             # write down the reward (change in score)
-            self.rewards.append(game.score - score)
+            #self.rewards.append(game.score - score)
+            self.rewards.append(1)
+            self.move_count += 1
 
         self._adjust_rewards()
 

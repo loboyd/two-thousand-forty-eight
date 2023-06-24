@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-
-LOAD = False
+LOAD = True
 SAVE = True
-BATCH_SIZE=512
+BATCH_SIZE=128
 
 import random
 import time
@@ -11,7 +10,7 @@ import torch
 
 from agent import Agent, Episode, set_seed
 
-seed = 40
+seed = 41
 random.seed(seed)
 set_seed(seed)
 
@@ -27,6 +26,7 @@ def update(net, optimizer, episodes, start_time=None):
     actions = [action for ep in episodes for action in ep.actions]
     rewards = [float(reward) for ep in episodes for reward in ep.rewards]
     scores = [ep.score for ep in episodes] # used only for progress printing
+    move_counts = [ep.move_count for ep in episodes] # used only for progress printing
 
     # pack shit into tensors
     states = torch.stack(states)
@@ -51,7 +51,7 @@ def update(net, optimizer, episodes, start_time=None):
     if SAVE: net.save()
 
     min_score = min(scores)
-    avg_score = sum(scores) / len(scores)
+    avg_score = sorted(scores)[len(scores)//2]
     max_score = max(scores)
     dt = time.time() - start_time
 
@@ -63,6 +63,12 @@ def update(net, optimizer, episodes, start_time=None):
     print(f'grad norm: {grad_norm}')
     print(f'[{min_score:7.2f}, {avg_score:7.2f}, {max_score:7.2f}], {dt:4.2f}s')
 
+    min_move_count = min(move_counts)
+    avg_move_count = sorted(move_counts)[len(move_counts)//2]
+    max_move_count = max(move_counts)
+    dt = time.time() - start_time
+    print(f'[{min_move_count:4.0f}, {avg_move_count:4.0f}, {max_move_count:4.0f}], {dt:4.2f}s')
+
 
 # NOTE: Look into RMSprop optimization
 # set up net and optimizer
@@ -70,7 +76,7 @@ net = Agent.load() if LOAD else Agent()
 optimizer = torch.optim.Adam(net.parameters(), lr=0.005)
 #lr_decay = lambda epoch: 0.1 ** (epoch // 16)
 lr_decay = lambda epoch: max(0.0001, 0.9 ** (epoch // 4)) # decay by 90% every 32 epochs, plateau
-scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_decay)
+#scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_decay)
 
 while True:
     start_time = time.time()
@@ -79,7 +85,7 @@ while True:
     episodes = [Episode(net) for _ in range(BATCH_SIZE)]
     for ep in episodes: ep.run()
     update(net, optimizer, episodes, start_time)
-    scheduler.step()
+    #scheduler.step()
     print(f'lr: {optimizer.param_groups[0]["lr"]}')
     print()
 
