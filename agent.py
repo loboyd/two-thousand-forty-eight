@@ -16,10 +16,12 @@ class Agent(nn.Module):
     def __init__(self):
         super(Agent, self).__init__()
         self.fc1 = nn.Linear(16, 512, bias=False)
-        self.fc2 = nn.Linear(512, 4, bias=False)
+        self.fc2 = nn.Linear(512, 32, bias=False)
+        self.fc3 = nn.Linear(32, 4, bias=False)
 
         nn.init.kaiming_uniform_(self.fc1.weight, mode='fan_in', nonlinearity='relu')
-        nn.init.uniform_(self.fc2.weight, a=-0.01, b=0.01)
+        nn.init.kaiming_uniform_(self.fc2.weight, mode='fan_in', nonlinearity='relu')
+        nn.init.uniform_(self.fc3.weight, a=-0.01, b=0.01)
 
     def forward(self, x, mask):
         # generate board symmetries
@@ -48,6 +50,8 @@ class Agent(nn.Module):
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
+        x = F.relu(x)
+        x = self.fc3(x)
 
         # untransform the action distributions; todo: do this better (in `helpers.py`)
         x[1, :, :] = x[1, :, ra(ra(ra()))] # 3*r = -1*r
