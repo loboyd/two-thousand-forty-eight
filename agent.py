@@ -19,13 +19,15 @@ class Agent(nn.Module):
         self.convh = nn.Conv2d(1, 1, kernel_size=(1, 2), bias=False)
         self.fc1 = nn.Linear(16+12+12, 512, bias=False)
         self.fc2 = nn.Linear(512, 32, bias=False)
-        self.fc3 = nn.Linear(32, 4, bias=False)
+        self.fc3 = nn.Linear(32, 32, bias=False)
+        self.fc4 = nn.Linear(32, 4, bias=False)
 
         nn.init.xavier_uniform_(self.convv.weight)
         nn.init.xavier_uniform_(self.convh.weight)
         nn.init.kaiming_uniform_(self.fc1.weight, mode='fan_in', nonlinearity='relu')
         nn.init.kaiming_uniform_(self.fc2.weight, mode='fan_in', nonlinearity='relu')
-        nn.init.uniform_(self.fc3.weight, a=-0.01, b=0.01)
+        nn.init.kaiming_uniform_(self.fc3.weight, mode='fan_in', nonlinearity='relu')
+        nn.init.uniform_(self.fc4.weight, a=-0.01, b=0.01)
 
     def forward(self, x, mask):
         # generate board symmetries
@@ -66,6 +68,8 @@ class Agent(nn.Module):
         x = self.fc2(x)
         x = F.relu(x)
         x = self.fc3(x)
+        x = F.relu(x)
+        x = self.fc4(x)
 
         # untransform the action distributions; todo: do this better (in `helpers.py`)
         x[1, :, :] = x[1, :, ra(ra(ra()))] # 3*r = -1*r
