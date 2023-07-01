@@ -28,6 +28,15 @@ class Agent(nn.Module):
         nn.init.kaiming_uniform_(self.fc3.weight, mode='fan_in', nonlinearity='relu')
         nn.init.uniform_(self.fc4.weight, a=-0.01, b=0.01)
 
+    def conv(self, x):
+        """Perform all the convs, concat the outputs, ReLU-activate"""
+        n, _, _ = x.shape
+        v = self.convv(x.unsqueeze(1)).view(n, 12) # this conv has shape (n, 1, 3, 4)
+        h = self.convh(x.unsqueeze(1)).view(n, 12) # this conv has shape (n, 1, 4, 3)
+        x = x.view(n, 16)
+        x = torch.cat((x, v, h), dim=1)
+        return F.relu(x)
+
     def forward(self, x, mask, handle_symmetries=True):
         if handle_symmetries:
             x = Agent._symmetrify(x)
@@ -35,11 +44,7 @@ class Agent(nn.Module):
         n, _, _ = x.shape
 
         # the actual math
-        v = self.convv(x.unsqueeze(1)).view(n, 12) # this conv has shape (n, 1, 3, 4)
-        h = self.convh(x.unsqueeze(1)).view(n, 12) # this conv has shape (n, 1, 4, 3)
-        x = x.view(n, 16)
-        x = torch.cat((x, v, h), dim=1)
-        x = F.relu(x)
+        x = self.conv(x)
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
