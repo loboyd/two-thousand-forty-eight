@@ -2,13 +2,14 @@ import pickle
 import random
 
 import torch
+from torch import rot90, flip
 from torch.distributions import Categorical
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
 from game import Direction, Game
-from helpers import rb, fb, ra, fa
+from helpers import r, f
 
 def set_seed(seed): torch.manual_seed(seed)
 
@@ -31,13 +32,13 @@ class Agent(nn.Module):
 
     def forward(self, x, mask):
         # generate board symmetries
-        x_r    = x[:, rb()]
-        x_rr   = x[:, rb(rb())]
-        x_rrr  = x[:, rb(rb(rb()))]
-        x_f    = x[:, fb()]
-        x_rf   = x[:, fb(rb())]
-        x_rrf  = x[:, fb(rb(rb()))]
-        x_rrrf = x[:, fb(rb(rb(rb())))]
+        x_r    = rot90(x, 1, (1, 2))
+        x_rr   = rot90(x, 2, (1, 2))
+        x_rrr  = rot90(x, 3, (1, 2))
+        x_f    = flip(x, [2])
+        x_rf   = flip(rot90(x, 1, (1, 2)), [2])
+        x_rrf  = flip(rot90(x, 2, (1, 2)), [2])
+        x_rrrf = flip(rot90(x, 3, (1, 2)), [2])
 
         # add dimension for symmetries; notes: dims are now 0 = symmetries, 1 = batch, 2 = data
         x      = torch.unsqueeze(x,      dim=0)
@@ -52,13 +53,13 @@ class Agent(nn.Module):
         # stack symmetries along the new dimension
         x = torch.cat((x, x_r, x_rr, x_rrr, xf, x_rf, x_rrf, x_rrrf), dim=0)
 
-        _, n, _ = x.shape
-        x = x.view(8*n, 1, 4, 4)
+        _, n, nr, nc = x.shape
+        x = x.view(8*n, 1, nr, nc)
 
         # the actual math
-        v = self.convv(x).view(8, n, 12)
+        v = self.convv(x).view(8, n, 12) # this conv has shape (8, n, 3, 4)
         v = F.relu(v)
-        h = self.convh(x).view(8, n, 12)
+        h = self.convh(x).view(8, n, 12) # this conv has shape (8, n, 4, 3)
         h = F.relu(h)
         x = x.view(8, n, 16)
         x = torch.cat((x, v, h), dim=2)
@@ -72,14 +73,14 @@ class Agent(nn.Module):
         x = self.fc4(x)
 
         # untransform the action distributions; todo: do this better (in `helpers.py`)
-        x[1, :, :] = x[1, :, ra(ra(ra()))] # 3*r = -1*r
-        x[2, :, :] = x[2, :, ra(ra())]
-        x[3, :, :] = x[3, :, ra()] # 1*r = -3*r
+        x[1, :, :] = x[1, :, r(r(r()))] # 3*r = -1*r
+        x[2, :, :] = x[2, :, r(r())]
+        x[3, :, :] = x[3, :, r()] # 1*r = -3*r
 
-        x[4, :, :] = x[4, :, fa()]
-        x[5, :, :] = x[5, :, ra(ra(ra(fa())))] # 3*r = -1*r
-        x[6, :, :] = x[6, :, ra(ra(fa()))] # 3*r = -1*r
-        x[7, :, :] = x[7, :, ra(fa())]
+        x[4, :, :] = x[4, :, f()]
+        x[5, :, :] = x[5, :, r(r(r(f())))] # 3*r = -1*r
+        x[6, :, :] = x[6, :, r(r(f()))] # 3*r = -1*r
+        x[7, :, :] = x[7, :, r(f())]
 
         # sum along over symmetries ahead of softmax (should this be done after? then you have to normalize)
         x = torch.sum(x, dim=0) # note: symmetry dimension collapses; back to 0 = batch, 1 = data
@@ -106,11 +107,12 @@ class Agent(nn.Module):
         if move_mask == [False] * 4:
             return None
 
-        input_data = torch.tensor([float(tile) for row in game.board for tile in row]).unsqueeze(0)
-        mask = torch.tensor([float(x) for x in move_mask]).unsqueeze(0)
+        # build tensors from `game.board` and `move_mask`
+        board = torch.tensor(game.board, dtype=torch.float32).unsqueeze(0)
+        mask = torch.tensor(move_mask, dtype=torch.float32).unsqueeze(0)
 
         # run the network
-        output = self.forward(input_data, mask)
+        output = self.forward(board, mask)
 
         # if training, sample policy distribution, otherwise, be greedy
         if train:
@@ -151,16 +153,16 @@ class Episode:
                 break
 
             # prepare input from board
-            input_data = torch.tensor([float(tile) for row in game.board for tile in row])
-            mask = torch.tensor([float(x) for x in mask])
-            self.states.append((input_data, mask))
+            board = torch.tensor(game.board, dtype=torch.float32)
+            mask = torch.tensor(mask, dtype=torch.float32)
+            self.states.append((board, mask))
 
             # add a dimension for batching
-            input_data = input_data.unsqueeze(0)
+            board = board.unsqueeze(0)
             mask = mask.unsqueeze(0)
 
             # run input through net generate policy distribution
-            distribution = Categorical(self.net(input_data, mask))
+            distribution = Categorical(self.net(board, mask))
 
             # sample the distribution
             sample = distribution.sample()
