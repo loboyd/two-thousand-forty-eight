@@ -2,7 +2,6 @@ import pickle
 import random
 
 import torch
-from torch import rot90, flip
 from torch.distributions import Categorical
 import torch.nn as nn
 import torch.nn.functional as F
@@ -32,22 +31,22 @@ class Agent(nn.Module):
 
     def forward(self, x, mask):
         # generate board symmetries
-        x_r    = rot90(x, 1, (1, 2))
-        x_rr   = rot90(x, 2, (1, 2))
-        x_rrr  = rot90(x, 3, (1, 2))
-        x_f    = flip(x, [2])
-        x_rf   = flip(rot90(x, 1, (1, 2)), [2])
-        x_rrf  = flip(rot90(x, 2, (1, 2)), [2])
-        x_rrrf = flip(rot90(x, 3, (1, 2)), [2])
+        x_r = torch.rot90(x, 1, (1, 2))
+        x_rr = torch.rot90(x, 2, (1, 2))
+        x_rrr = torch.rot90(x, 3, (1, 2))
+        x_f = torch.flip(x, [2])
+        x_rf = torch.flip(x_r, [2])
+        x_rrf = torch.flip(x_rr, [2])
+        x_rrrf = torch.flip(x_rrr, [2])
 
         # add dimension for symmetries; notes: dims are now 0 = symmetries, 1 = batch, 2 = data
-        x      = torch.unsqueeze(x,      dim=0)
-        x_r    = torch.unsqueeze(x_r,    dim=0)
-        x_rr   = torch.unsqueeze(x_rr,   dim=0)
-        x_rrr  = torch.unsqueeze(x_rrr,  dim=0)
-        xf     = torch.unsqueeze(x_f,    dim=0)
-        x_rf   = torch.unsqueeze(x_rf,   dim=0)
-        x_rrf  = torch.unsqueeze(x_rrf,  dim=0)
+        x = torch.unsqueeze(x, dim=0)
+        x_r = torch.unsqueeze(x_r, dim=0)
+        x_rr = torch.unsqueeze(x_rr, dim=0)
+        x_rrr = torch.unsqueeze(x_rrr, dim=0)
+        xf = torch.unsqueeze(x_f, dim=0)
+        x_rf = torch.unsqueeze(x_rf, dim=0)
+        x_rrf = torch.unsqueeze(x_rrf, dim=0)
         x_rrrf = torch.unsqueeze(x_rrrf, dim=0)
 
         # stack symmetries along the new dimension
