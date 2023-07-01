@@ -1,3 +1,4 @@
+import copy
 import pickle
 import random
 
@@ -16,7 +17,7 @@ class Agent(nn.Module):
         super(Agent, self).__init__()
         self.convv = nn.Conv2d(1, 1, kernel_size=(2, 1), bias=False)
         self.convh = nn.Conv2d(1, 1, kernel_size=(1, 2), bias=False)
-        self.fc1 = nn.Linear(16+12+12, 512, bias=False)
+        self.fc1 = nn.Linear(4*(16+12+12), 512, bias=False)
         self.fc2 = nn.Linear(512, 32, bias=False)
         self.fc3 = nn.Linear(32, 32, bias=False)
         self.fc4 = nn.Linear(32, 4, bias=False)
@@ -37,14 +38,24 @@ class Agent(nn.Module):
         x = torch.cat((x, v, h), dim=1)
         return F.relu(x)
 
-    def forward(self, x, mask, handle_symmetries=True):
-        if handle_symmetries:
-            x = Agent._symmetrify(x)
+    # x has shape (batch_size, n_forward_states, nr, nc)
+    def forward(self, x, mask, handle_symmetries=False):
+        #if handle_symmetries:
+        #    x = Agent._symmetrify(x)
+
+        batch_size, n_forward_states, nr, nc = x.shape
+        x = x.view(batch_size * n_forward_states, nr, nc)
 
         n, _, _ = x.shape
 
         # the actual math
         x = self.conv(x)
+
+        # todo: see if this can be cleaned up
+        t, c = x.shape # t is batch_size * n_forward_states, c is the outputs of conv
+        f = t*c // batch_size // n_forward_states # features from conv
+        x = x.view(batch_size, n_forward_states*f) # or (t*c)/batch_size
+
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
@@ -53,8 +64,8 @@ class Agent(nn.Module):
         x = F.relu(x)
         x = self.fc4(x)
 
-        if handle_symmetries:
-            x = Agent._unsymmetrify(x)
+        #if handle_symmetries:
+        #    x = Agent._unsymmetrify(x)
 
         # enforce mask
         x[mask == 0] = float('-inf')
@@ -117,12 +128,19 @@ class Agent(nn.Module):
         if move_mask == [False] * 4:
             return None
 
+        forward_states = []
+        for i in range(4):
+            s = copy.deepcopy(game)
+            s.move(Direction(i + 1))
+            board = s.board if move_mask[i] else Game.EMPTY_BOARD
+            forward_states.append(board)
+
         # build tensors from `game.board` and `move_mask`
-        board = torch.tensor(game.board, dtype=torch.float32).unsqueeze(0)
+        forward_states = torch.tensor(forward_states, dtype=torch.float32).unsqueeze(0)
         mask = torch.tensor(move_mask, dtype=torch.float32).unsqueeze(0)
 
         # run the network
-        output = self.forward(board, mask)
+        output = self.forward(forward_states, mask)
 
         # if training, sample policy distribution, otherwise, be greedy
         if train:
@@ -162,17 +180,24 @@ class Episode:
             if mask == [False, False, False, False]:
                 break
 
+            forward_states = []
+            for i in range(4):
+                s = copy.deepcopy(game)
+                s.move(Direction(i + 1))
+                board = s.board if mask[i] else Game.EMPTY_BOARD
+                forward_states.append(board)
+
             # prepare input from board
-            board = torch.tensor(game.board, dtype=torch.float32)
+            forward_states = torch.tensor(forward_states, dtype=torch.float32)
             mask = torch.tensor(mask, dtype=torch.float32)
-            self.states.append((board, mask))
+            self.states.append((forward_states, mask))
 
             # add a dimension for batching
-            board = board.unsqueeze(0)
+            forward_states = forward_states.unsqueeze(0)
             mask = mask.unsqueeze(0)
 
             # run input through net generate policy distribution
-            distribution = Categorical(self.net(board, mask))
+            distribution = Categorical(self.net(forward_states, mask))
 
             # sample the distribution
             sample = distribution.sample()
