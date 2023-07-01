@@ -21,6 +21,11 @@ a 2048 emulator, hopefully with very little code
     with a much faster Rust version and it's not any faster.
   * updating: This takes very little time compared with actually running the episode batches.
 
+# Ideas
+* Train a net to weight four states according to their relative quality. For each "move", do this
+  several (like 16 or 32) times, and then combine the resulting distributions, similar to how is now
+  done for symmetries. The idea is to sort of build a single search step into the agent.
+
 # AlphaGo
 * policy network trained with supervised learning on expert games
 * policy network trained via self-play reinforcement learning
