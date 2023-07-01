@@ -36,11 +36,10 @@ class Agent(nn.Module):
 
         # the actual math
         v = self.convv(x.unsqueeze(1)).view(n, 12) # this conv has shape (n, 1, 3, 4)
-        v = F.relu(v)
         h = self.convh(x.unsqueeze(1)).view(n, 12) # this conv has shape (n, 1, 4, 3)
-        h = F.relu(h)
         x = x.view(n, 16)
         x = torch.cat((x, v, h), dim=1)
+        x = F.relu(x)
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
