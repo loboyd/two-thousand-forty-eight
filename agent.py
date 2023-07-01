@@ -8,7 +8,6 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from game import Direction, Game
-from helpers import r, f
 
 def set_seed(seed): torch.manual_seed(seed)
 
@@ -29,7 +28,40 @@ class Agent(nn.Module):
         nn.init.kaiming_uniform_(self.fc3.weight, mode='fan_in', nonlinearity='relu')
         nn.init.uniform_(self.fc4.weight, a=-0.01, b=0.01)
 
-    def forward(self, x, mask):
+    def forward(self, x, mask, handle_symmetries=True):
+        if handle_symmetries:
+            x = Agent._symmetrify(x)
+
+        n, _, _ = x.shape
+
+        # the actual math
+        v = self.convv(x.unsqueeze(1)).view(n, 12) # this conv has shape (n, 1, 3, 4)
+        v = F.relu(v)
+        h = self.convh(x.unsqueeze(1)).view(n, 12) # this conv has shape (n, 1, 4, 3)
+        h = F.relu(h)
+        x = x.view(n, 16)
+        x = torch.cat((x, v, h), dim=1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        x = F.relu(x)
+        x = self.fc3(x)
+        x = F.relu(x)
+        x = self.fc4(x)
+
+        if handle_symmetries:
+            x = Agent._unsymmetrify(x)
+
+        # enforce mask
+        x[mask == 0] = float('-inf')
+
+        x = F.softmax(x, dim=1)
+        return x
+
+    def _symmetrify(x):
+        """Augment the given batched input with dihedral-symmetric transformations."""
+        n, nr, nc = x.shape
+
         # generate board symmetries
         x_r = torch.rot90(x, 1, (1, 2))
         x_rr = torch.rot90(x, 2, (1, 2))
@@ -39,56 +71,31 @@ class Agent(nn.Module):
         x_rrf = torch.flip(x_rr, [2])
         x_rrrf = torch.flip(x_rrr, [2])
 
-        # add dimension for symmetries; notes: dims are now 0 = symmetries, 1 = batch, 2 = data
-        x = torch.unsqueeze(x, dim=0)
-        x_r = torch.unsqueeze(x_r, dim=0)
-        x_rr = torch.unsqueeze(x_rr, dim=0)
-        x_rrr = torch.unsqueeze(x_rrr, dim=0)
-        xf = torch.unsqueeze(x_f, dim=0)
-        x_rf = torch.unsqueeze(x_rf, dim=0)
-        x_rrf = torch.unsqueeze(x_rrf, dim=0)
-        x_rrrf = torch.unsqueeze(x_rrrf, dim=0)
+        x = torch.stack([x, x_r, x_rr, x_rrr, x_f, x_rf, x_rrf, x_rrrf])
 
-        # stack symmetries along the new dimension
-        x = torch.cat((x, x_r, x_rr, x_rrr, xf, x_rf, x_rrf, x_rrrf), dim=0)
+        return x.view(8*n, nr, nc)
 
-        _, n, nr, nc = x.shape
-        x = x.view(8*n, 1, nr, nc)
+    def _unsymmetrify(x):
+        # transforms on the action space: rotate counterclockwise and flip about vertical axis
+        def r(index=torch.arange(4)): return index[torch.tensor([1, 2, 3, 0])]
+        def f(index=torch.arange(4)): return index[torch.tensor([0, 3, 2, 1])]
 
-        # the actual math
-        v = self.convv(x).view(8, n, 12) # this conv has shape (8, n, 3, 4)
-        v = F.relu(v)
-        h = self.convh(x).view(8, n, 12) # this conv has shape (8, n, 4, 3)
-        h = F.relu(h)
-        x = x.view(8, n, 16)
-        x = torch.cat((x, v, h), dim=2)
-        x = x.view(8, n, 16+12+12) # flatten
-        x = self.fc1(x)
-        x = F.relu(x)
-        x = self.fc2(x)
-        x = F.relu(x)
-        x = self.fc3(x)
-        x = F.relu(x)
-        x = self.fc4(x)
+        n, _ = x.shape
 
-        # untransform the action distributions; todo: do this better (in `helpers.py`)
+        # split symmetries into their own 8-element dimension
+        x = x.view(8, n//8, 4)
+
+        # untransform the action distributions
         x[1, :, :] = x[1, :, r(r(r()))] # 3*r = -1*r
         x[2, :, :] = x[2, :, r(r())]
         x[3, :, :] = x[3, :, r()] # 1*r = -3*r
-
         x[4, :, :] = x[4, :, f()]
         x[5, :, :] = x[5, :, r(r(r(f())))] # 3*r = -1*r
         x[6, :, :] = x[6, :, r(r(f()))] # 3*r = -1*r
         x[7, :, :] = x[7, :, r(f())]
 
-        # sum along over symmetries ahead of softmax (should this be done after? then you have to normalize)
-        x = torch.sum(x, dim=0) # note: symmetry dimension collapses; back to 0 = batch, 1 = data
-
-        # enforce mask
-        x[mask == 0] = float('-inf')
-
-        x = F.softmax(x, dim=1)
-        return x
+        # sum across symmetries
+        return torch.sum(x, dim=0)
 
     def play_move(self, game, train=False):
         """Execute a move according to the policy. If `train == false`, play greedily. Returns
