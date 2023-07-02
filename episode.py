@@ -4,8 +4,8 @@ from torch.distributions import Categorical
 from game import Direction, Game
 
 class Episode:
-    def __init__(self, net, gamma=1):
-        self.net = net
+    def __init__(self, agent, gamma=1):
+        self.agent = agent
         self.gamma = gamma
         self.states = []
         self.actions = []
@@ -31,8 +31,8 @@ class Episode:
             board = board.unsqueeze(0)
             mask = mask.unsqueeze(0)
 
-            # run input through net generate policy distribution
-            distribution = Categorical(self.net(board, mask))
+            # run input through agent generate policy distribution
+            distribution = Categorical(self.agent(board, mask))
 
             # sample the distribution
             sample = distribution.sample()
