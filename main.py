@@ -9,7 +9,8 @@ import time
 
 import torch
 
-from agent import Agent, Episode, set_seed
+from agent import Agent, set_seed
+from episode import Episode
 
 seed = 40
 random.seed(seed)
