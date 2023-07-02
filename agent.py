@@ -100,8 +100,14 @@ class Agent(nn.Module):
         # sum across symmetries
         return torch.sum(x, dim=0)
 
+    # todo
+    def get_moves(self, games, train=False):
+        raise NotImplementedError
+
     def get_move(self, game, train=False):
-        # prepare input from board
+        """Returns the `Direction` given a `Game` if there is at least one legal move. Otherwise,
+           returns `None`.."""
+        # check move availability; return early if none available
         move_mask = game.get_move_mask()
         if move_mask == [False] * 4:
             return None
@@ -110,14 +116,14 @@ class Agent(nn.Module):
         board = torch.tensor(game.board, dtype=torch.float32).unsqueeze(0)
         mask = torch.tensor(move_mask, dtype=torch.float32).unsqueeze(0)
 
-        # run the network
-        output = self.forward(board, mask)
+        # run the network to compute probability distribution over action space
+        distribution = self.forward(board, mask)
 
         # if training, sample policy distribution, otherwise, be greedy
         if train:
-            move_index = Categorical(output).sample().item()
+            move_index = Categorical(distribution).sample().item()
         else:
-            move_index = torch.argmax(output, dim=1).item()
+            move_index = torch.argmax(distribution, dim=1).item()
 
         # convert action to direction/move
         return Direction(move_index + 1)
