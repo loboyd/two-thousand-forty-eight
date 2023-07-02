@@ -2,6 +2,7 @@ import pickle
 import random
 
 import torch
+from torch.distributions import Categorical
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -100,9 +101,19 @@ class Agent(nn.Module):
         # sum across symmetries
         return torch.sum(x, dim=0)
 
-    # todo
-    def get_moves(self, games, train=False):
-        raise NotImplementedError
+    def get_batch_moves(self, games, train=False):
+        """Return a list of `Direction`s given a list of `Game`s."""
+        boards = torch.tensor([game.board for game in games], dtype=torch.float32)
+        masks = torch.tensor([game.get_move_mask() for game in games], dtype=torch.float32)
+
+        distributions = self.forward(boards, masks)
+
+        if train:
+            move_indices = Categorical(distributions).sample().tolist()
+        else:
+            move_indices = torch.argmax(distributions, dim=1).tolist()
+
+        return [Direction(move_index + 1) for move_index in move_indices]
 
     def get_move(self, game, train=False):
         """Returns the `Direction` given a `Game` if there is at least one legal move. Otherwise,
