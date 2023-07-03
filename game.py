@@ -60,6 +60,9 @@ class Game:
         if self.board != snapshot:
             self._place_random()
 
+    def ongoing(self):
+        return self.get_move_mask() != [False] * 4
+
     def get_move_mask(self):
         moves = set()
         for r, c in [(x, y) for x in range(4) for y in range(3)]:
