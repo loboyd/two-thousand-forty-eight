@@ -33,8 +33,7 @@ class Batch:
     def __init__(self, agent, batch_size=1, gamma=1):
         self.agent = agent
         self.batch_size = batch_size
-        self.gamma = gamma
-        self.episodes = [Episode(agent) for _ in range(batch_size)]
+        self.episodes = [Episode(agent, gamma=gamma) for _ in range(batch_size)]
 
     def run(self):
         games = [Game(exp=True) for _ in range(self.batch_size)]
