@@ -142,6 +142,38 @@ class Agent(nn.Module):
         # convert action to direction/move
         return Direction(move_index + 1)
 
+    def update(self, optimizer, episodes):
+        # prep data
+        states = [state for ep in episodes for state in ep.states]
+        actions = torch.tensor([action.value - 1 for ep in episodes for action in ep.actions])
+        rewards = torch.tensor([reward for ep in episodes for reward in ep.rewards])
+        scores = [ep.score for ep in episodes] # only used for progress reporting
+
+        # normalize rewards (sigh... i guess)
+        rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5)
+
+        # do a forward pass (and reconstruct the sampling using the actions)
+        distributions = self._get_batch_distributions(states)
+        as_sampled = distributions[torch.arange(actions.size(0)), actions]
+
+        # compute loss
+        action_log_probs = torch.log(as_sampled)
+        loss = (-action_log_probs * rewards).sum()
+
+        # zero grad and do a backward pass
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        # report on progress
+        grad_norm = torch.norm(torch.cat([p.grad.view(-1) for p in self.parameters()]), p=2)
+        print(f'grad norm: {grad_norm}')
+        min_score = min(scores)
+        avg_score = sum(scores)/len(scores)
+        max_score = max(scores)
+        print(f'[{min_score:7.2f}, {avg_score:7.2f}, {max_score:7.2f}]')
+        print()
+
     def save(self):
         with open('data.pickle', 'wb') as file:
             pickle.dump(self, file)
