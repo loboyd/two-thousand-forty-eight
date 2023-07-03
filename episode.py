@@ -13,10 +13,10 @@ class Episode:
 
     def run(self):
         game = Game(exp=True)
-        prev_score = game.score
         while move := self.agent.get_move(game):
             self.states.append(copy.deepcopy(game))
             self.actions.append(move)
+            prev_score = game.score
             game.move(move)
             self.rewards.append(game.score - prev_score)
 
