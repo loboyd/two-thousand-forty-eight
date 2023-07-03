@@ -37,7 +37,7 @@ class Batch:
         self.episodes = [Episode(agent) for _ in range(batch_size)]
 
     def run(self):
-        games = [Game() for _ in range(self.batch_size)]
+        games = [Game(exp=True) for _ in range(self.batch_size)]
 
         while z := [(ind, game) for ind, game in enumerate(games) if game.ongoing()]:
             indices, in_play = zip(*z) # unzip (i don't understand how this works, but it does)
