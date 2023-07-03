@@ -24,7 +24,7 @@ class Episode:
         self.score = game.score
 
     def _adjust_rewards(self):
-        R = 0
+        R = 0.
         for i in range(len(self.rewards)-1, -1, -1):
             R = self.rewards[i] + self.gamma * R
             self.rewards[i] = R
