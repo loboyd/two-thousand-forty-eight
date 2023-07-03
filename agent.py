@@ -101,15 +101,15 @@ class Agent(nn.Module):
         # sum across symmetries
         return torch.sum(x, dim=0)
 
-    def _get_batch_distributions(self, games):
-        boards = torch.tensor([game.board for game in games], dtype=torch.float32)
-        masks = torch.tensor([game.get_move_mask() for game in games], dtype=torch.float32)
+    def _get_batch_distributions(self, states):
+        boards = torch.tensor([state.board for state in states], dtype=torch.float32)
+        masks = torch.tensor([state.get_move_mask() for state in states], dtype=torch.float32)
 
         return self.forward(boards, masks)
 
-    def get_batch_moves(self, games, train=False):
+    def get_batch_moves(self, states, train=False):
         """Return a list of `Direction`s given a list of `Game`s."""
-        distributions = self._get_batch_distributions(games)
+        distributions = self._get_batch_distributions(states)
 
         if train:
             move_indices = Categorical(distributions).sample().tolist()
