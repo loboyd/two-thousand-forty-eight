@@ -13,7 +13,7 @@ class Episode:
 
     def run(self):
         game = Game(exp=True)
-        while move := self.agent.get_move(game):
+        while move := self.agent.get_move(game, train=True):
             self.states.append(copy.deepcopy(game))
             self.actions.append(move)
             prev_score = game.score
@@ -40,7 +40,7 @@ class Batch:
 
         while z := [(ind, game) for ind, game in enumerate(games) if game.ongoing()]:
             indices, in_play = zip(*z) # unzip (i don't understand how this works, but it does)
-            moves = self.agent.get_batch_moves(in_play)
+            moves = self.agent.get_batch_moves(in_play, train=True)
             for ind, game, move in zip(indices, in_play, moves):
                 self.episodes[ind].states.append(copy.deepcopy(game))
                 self.episodes[ind].actions.append(move)
