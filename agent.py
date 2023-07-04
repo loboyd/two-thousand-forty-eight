@@ -14,37 +14,23 @@ def set_seed(seed): torch.manual_seed(seed)
 class Agent(nn.Module):
     def __init__(self):
         super(Agent, self).__init__()
-        self.convv = nn.Conv2d(1, 1, kernel_size=(2, 1), bias=False)
-        self.convh = nn.Conv2d(1, 1, kernel_size=(1, 2), bias=False)
-        self.fc1 = nn.Linear(16+12+12, 512, bias=False)
+        self.fc1 = nn.Linear(16, 512, bias=False)
         self.fc2 = nn.Linear(512, 32, bias=False)
         self.fc3 = nn.Linear(32, 32, bias=False)
         self.fc4 = nn.Linear(32, 4, bias=False)
 
-        nn.init.xavier_uniform_(self.convv.weight)
-        nn.init.xavier_uniform_(self.convh.weight)
         nn.init.kaiming_uniform_(self.fc1.weight, mode='fan_in', nonlinearity='relu')
         nn.init.kaiming_uniform_(self.fc2.weight, mode='fan_in', nonlinearity='relu')
         nn.init.kaiming_uniform_(self.fc3.weight, mode='fan_in', nonlinearity='relu')
         nn.init.uniform_(self.fc4.weight, a=-0.01, b=0.01)
 
-    def conv(self, x):
-        """Perform all the convs, concat the outputs, ReLU-activate"""
-        n, _, _ = x.shape
-        v = self.convv(x.unsqueeze(1)).view(n, 12) # this conv has shape (n, 1, 3, 4)
-        h = self.convh(x.unsqueeze(1)).view(n, 12) # this conv has shape (n, 1, 4, 3)
-        x = x.view(n, 16)
-        x = torch.cat((x, v, h), dim=1)
-        return F.relu(x)
-
-    def forward(self, x, mask, handle_symmetries=True):
+    def forward(self, x, mask, handle_symmetries=False):
         if handle_symmetries:
             x = Agent._symmetrify(x)
 
-        n, _, _ = x.shape
+        x = x.view(-1, 16)
 
         # the actual math
-        x = self.conv(x)
         x = self.fc1(x)
         x = F.relu(x)
         x = self.fc2(x)
