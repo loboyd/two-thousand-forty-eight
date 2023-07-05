@@ -4,40 +4,33 @@ DISPLAY = False
 SCALE = 8
 
 import random
+import time
 
 import matplotlib.pyplot as plt
 
 from agent import Agent
-from game import Direction, Game
+from episode import Batch
+from game import Direction
 
 class RandomBot:
     def __init__(self): pass
 
-    def get_move(self, game):
-        move_mask = game.get_move_mask()
-        available_moves = [k for k, v in enumerate(move_mask) if v]
-        if available_moves == []:
-            return None
-        move_index = random.choice(available_moves)
-        return Direction(move_index + 1)
+    def get_batch_moves(self, games, train=False):
+        moves = []
+        for game in games:
+            move_mask = game.get_move_mask()
+            available_moves = [k for k, v in enumerate(move_mask) if v]
+            if available_moves == []:
+                return None
+            move_index = random.choice(available_moves)
+            moves.append(Direction(move_index + 1))
+        return moves
         
 
 def gameplay_hist(bot):
-    scores = []
-    for _ in range(2**SCALE):
-        game = Game(exp=True)
-        if DISPLAY: print(game)
-        while (direction := bot.get_move(game)) is not None:
-            game.move(direction)
-
-            if DISPLAY:
-                print(f'direction: {direction}')
-                print()
-                print(f'score: {game.score}')
-                print(game)
-
-        scores.append(game.score)
-    return scores
+    batch = Batch(bot, batch_size=2**SCALE)
+    batch.run(train=False)
+    return [ep.score for ep in batch.episodes]
 
 
 if __name__ == '__main__':
@@ -46,8 +39,13 @@ if __name__ == '__main__':
     learned = Agent.load()
 
     # play games
+    t = time.time()
     rando_scores = gameplay_hist(rando)
+    print(f'played RandomBot games in {time.time() - t} seconds')
+
+    t = time.time()
     learned_scores = gameplay_hist(learned)
+    print(f'played Agent games in {time.time() - t} seconds')
 
     plt.hist(rando_scores, alpha=0.5, label='random', bins=SCALE, density=True)
     plt.hist(learned_scores, alpha=0.5, label='learned policy', bins=SCALE, density=True)
