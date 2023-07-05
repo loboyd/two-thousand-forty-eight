@@ -35,12 +35,12 @@ class Batch:
         self.batch_size = batch_size
         self.episodes = [Episode(agent, gamma=gamma) for _ in range(batch_size)]
 
-    def run(self):
+    def run(self, train=True):
         games = [Game(exp=True) for _ in range(self.batch_size)]
 
         while z := [(ind, game) for ind, game in enumerate(games) if game.ongoing()]:
             indices, in_play = zip(*z) # unzip (i don't understand how this works, but it does)
-            moves = self.agent.get_batch_moves(in_play, train=True)
+            moves = self.agent.get_batch_moves(in_play, train=train)
             for ind, game, move in zip(indices, in_play, moves):
                 self.episodes[ind].states.append(copy.deepcopy(game))
                 self.episodes[ind].actions.append(move)
