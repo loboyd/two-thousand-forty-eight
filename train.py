@@ -2,7 +2,7 @@
 
 LOAD = False
 SAVE = False
-BATCH_SIZE=2**4
+BATCH_SIZE=2**8
 
 import random
 import time
