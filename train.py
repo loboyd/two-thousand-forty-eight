@@ -8,7 +8,6 @@ import random
 import time
 
 import torch
-from torch import nn
 
 from agent import Agent, set_seed
 from episode import Batch, Episode
@@ -20,7 +19,7 @@ set_seed(seed)
 
 # set up agent and optimizer
 agent = Agent.load() if LOAD else Agent()
-optimizer = torch.optim.Adam(agent.parameters(), lr=0.002)
+optimizer = torch.optimizers.Adam(agent.parameters(), lr=0.002)
 
 while True:
     # run a batch of episodes
